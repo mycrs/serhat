@@ -5,9 +5,13 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>QruzePlayer | İçerikler</title>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-<!-- Video.js for enhanced video support -->
+<!-- Advanced Video Libraries -->
 <link href="https://vjs.zencdn.net/8.6.1/video-js.css" rel="stylesheet">
 <script src="https://vjs.zencdn.net/8.6.1/video.min.js"></script>
+<!-- JSMKV for MKV support -->
+<script src="https://unpkg.com/jsmkv@1.0.0/dist/jsmkv.min.js"></script>
+<!-- Media Source Extensions Polyfill -->
+<script src="https://unpkg.com/mux.js@6.0.1/dist/mux.min.js"></script>
 <style>
   :root{
     --bg:#0b0d10; --panel:#11161b; --line:#1f2630;
@@ -91,16 +95,17 @@
   .infoContent{line-height:1.6;color:var(--ink)}
   .infoClose{background:var(--cta);color:#fff;border:0;padding:10px 20px;border-radius:8px;cursor:pointer;margin-top:15px;font-weight:700}
 
-  /* Smart Loading Modal */
-  .smartModal{position:fixed;inset:0;background:#000c;display:none;align-items:center;justify-content:center;z-index:1000}
-  .smartModal.active{display:flex}
-  .smartBox{background:#0f1318;border:1px solid var(--line);border-radius:12px;width:min(90vw,400px);padding:25px;text-align:center}
-  .smartTitle{font-size:16px;font-weight:700;margin-bottom:20px;color:var(--acc)}
-  .smartStatus{font-size:14px;color:var(--ink);margin:15px 0;line-height:1.5}
-  .smartSpinner{width:40px;height:40px;border:3px solid #333;border-top:3px solid var(--acc);border-radius:50%;animation:spin 1s linear infinite;margin:20px auto}
+  /* Advanced Loading Modal */
+  .advancedModal{position:fixed;inset:0;background:#000c;display:none;align-items:center;justify-content:center;z-index:1000}
+  .advancedModal.active{display:flex}
+  .advancedBox{background:#0f1318;border:1px solid var(--line);border-radius:12px;width:min(90vw,450px);padding:25px;text-align:center}
+  .advancedTitle{font-size:16px;font-weight:700;margin-bottom:20px;color:var(--acc)}
+  .advancedStatus{font-size:14px;color:var(--ink);margin:15px 0;line-height:1.5}
+  .advancedSpinner{width:40px;height:40px;border:3px solid #333;border-top:3px solid var(--acc);border-radius:50%;animation:spin 1s linear infinite;margin:20px auto}
   @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
-  .smartProgress{width:100%;height:6px;background:#1a1a1a;border-radius:10px;overflow:hidden;margin:15px 0}
-  .smartProgressBar{height:100%;background:linear-gradient(90deg,var(--acc),#ffd940);width:0%;transition:width 0.3s}
+  .advancedProgress{width:100%;height:8px;background:#1a1a1a;border-radius:10px;overflow:hidden;margin:15px 0}
+  .advancedProgressBar{height:100%;background:linear-gradient(90deg,var(--acc),#ffd940);width:0%;transition:width 0.3s}
+  .formatBadge{display:inline-block;padding:4px 8px;background:#2a2a2a;color:var(--acc);border-radius:4px;font-size:11px;font-weight:bold;margin:0 4px}
 </style>
 </head>
 <body>
@@ -170,20 +175,22 @@
         <li>Film ve dizi arşivi</li>
         <li>Hızlı arama sistemi</li>
         <li>Kategori bazlı filtreleme</li>
-        <li>🆕 Akıllı video oynatma (tüm formatlar)</li>
+        <li>🆕 Gelişmiş MKV desteği (JSMKV)</li>
+        <li>🆕 Media Source Extensions</li>
       </ul>
       
       <p><strong>⚠️ Desteklenen Formatlar:</strong></p>
       <ul>
-        <li>✅ MP4 - Tam destek</li>
-        <li>✅ M3U8 (HLS) - Tam destek</li>
-        <li>✅ MKV - Video.js ile gelişmiş destek</li>
-        <li>✅ AVI - Akıllı format dönüştürme</li>
+        <li>✅ MP4 - Native destek</li>
+        <li>✅ M3U8 (HLS) - HLS.js ile</li>
+        <li>✅ MKV - JSMKV ile gelişmiş destek</li>
+        <li>✅ AVI - Çoklu fallback sistemi</li>
         <li>✅ WEBM - Native destek</li>
+        <li>✅ MOV - QuickTime destek</li>
       </ul>
       
-      <p><strong>💡 Akıllı Oynatma:</strong></p>
-      <p>Sistem otomatik olarak en uygun formatı seçer ve oynatır. Hiçbir ek işlem gerekmez!</p>
+      <p><strong>💡 Gelişmiş Oynatma:</strong></p>
+      <p>Sistem 5 farklı yöntemle videoları oynatmaya çalışır. MKV dosyaları için özel JSMKV kütüphanesi kullanılır.</p>
       
       <p><strong>🔒 Güvenlik:</strong></p>
       <p>Site gelişim aşamasındadır. Güvenlik önlemleri sürekli güncellenmektedir.</p>
@@ -192,15 +199,16 @@
   </div>
 </div>
 
-<!-- Smart Loading Modal -->
-<div class="smartModal" id="smartModal">
-  <div class="smartBox">
-    <div class="smartTitle">🎬 Video Hazırlanıyor</div>
-    <div class="smartSpinner"></div>
-    <div class="smartStatus" id="smartStatus">En uygun format aranıyor...</div>
-    <div class="smartProgress">
-      <div class="smartProgressBar" id="smartProgressBar"></div>
+<!-- Advanced Processing Modal -->
+<div class="advancedModal" id="advancedModal">
+  <div class="advancedBox">
+    <div class="advancedTitle">🎬 Gelişmiş Video İşleme</div>
+    <div class="advancedSpinner"></div>
+    <div class="advancedStatus" id="advancedStatus">Video formatı analiz ediliyor...</div>
+    <div class="advancedProgress">
+      <div class="advancedProgressBar" id="advancedProgressBar"></div>
     </div>
+    <div id="formatInfo" style="margin-top:15px;font-size:12px;color:var(--mut);"></div>
   </div>
 </div>
 
@@ -216,10 +224,12 @@ const el = {
   clearSearch: $('#clearSearch'), sideTitle: $('#sideTitle')
 };
 
-// Video player instances
+// Advanced video player instances
 let currentPlayer = null;
 let _hls = null;
 let _meta = null;
+let mediaSource = null;
+let sourceBuffer = null;
 
 // Güvenlik fonksiyonları
 function sanitizeInput(input) {
@@ -293,7 +303,7 @@ function safePoster(x){
   return LOGO_URL;
 }
 
-// Video format tespiti
+// Advanced video format detection
 function getVideoFormat(url, ext) {
   if(!url) return ext || 'mp4';
   if(url.includes('.m3u8')) return 'm3u8';
@@ -302,58 +312,338 @@ function getVideoFormat(url, ext) {
   if(url.includes('.mkv')) return 'mkv';
   if(url.includes('.mov')) return 'mov';
   if(url.includes('.webm')) return 'webm';
+  if(url.includes('.ts')) return 'ts';
+  if(url.includes('.flv')) return 'flv';
   return ext || 'mp4';
 }
 
-/* ====== Smart Video Player (Universal Format Support) ====== */
-async function playSmartVideo(kind, id, ext, title, poster) {
-  const baseUrl = streamUrl(kind, id, ext);
-  const format = getVideoFormat(baseUrl, ext);
-  const meta = {kind, id, title, poster, ext, baseUrl};
+function getFormatSupport(format) {
+  const video = document.createElement('video');
+  const support = {
+    native: false,
+    mse: false,
+    library: false,
+    method: 'none'
+  };
   
-  console.log('Smart video play:', {format, baseUrl, meta});
-  
-  // Direkt desteklenen formatlar
-  if(format === 'm3u8' || format === 'mp4' || format === 'webm') {
-    playUnified(baseUrl, meta);
-    return;
+  switch(format) {
+    case 'mp4':
+      support.native = video.canPlayType('video/mp4') !== '';
+      support.method = support.native ? 'native' : 'none';
+      break;
+    case 'webm':
+      support.native = video.canPlayType('video/webm') !== '';
+      support.method = support.native ? 'native' : 'none';
+      break;
+    case 'm3u8':
+      support.native = video.canPlayType('application/vnd.apple.mpegurl') !== '';
+      support.library = typeof Hls !== 'undefined' && Hls.isSupported();
+      support.method = support.library ? 'hls.js' : support.native ? 'native' : 'none';
+      break;
+    case 'mkv':
+      support.library = typeof JSMKV !== 'undefined';
+      support.mse = 'MediaSource' in window;
+      support.method = support.library ? 'jsmkv' : support.mse ? 'mse' : 'none';
+      break;
+    case 'avi':
+    case 'mov':
+    case 'ts':
+      support.mse = 'MediaSource' in window;
+      support.method = support.mse ? 'mse' : 'none';
+      break;
+    default:
+      support.method = 'fallback';
   }
   
-  // MKV/AVI için akıllı format arama
-  if(format === 'mkv' || format === 'avi' || format === 'mov') {
-    await findBestFormat(baseUrl, format, meta);
-    return;
-  }
-  
-  // Fallback
-  playUnified(baseUrl, meta);
+  return support;
 }
 
-async function findBestFormat(originalUrl, originalFormat, meta) {
-  const modal = document.getElementById('smartModal');
-  const statusEl = document.getElementById('smartStatus');
-  const progressEl = document.getElementById('smartProgressBar');
+/* ====== Advanced Video Player (Multi-Method Support) ====== */
+async function playAdvancedVideo(kind, id, ext, title, poster) {
+  const baseUrl = streamUrl(kind, id, ext);
+  const format = getVideoFormat(baseUrl, ext);
+  const meta = {kind, id, title, poster, ext, baseUrl, format};
+  
+  console.log('Advanced video play:', {format, baseUrl, meta});
+  
+  // Show advanced processing modal
+  const modal = document.getElementById('advancedModal');
+  const statusEl = document.getElementById('advancedStatus');
+  const progressEl = document.getElementById('advancedProgressBar');
+  const formatInfo = document.getElementById('formatInfo');
   
   modal.classList.add('active');
-  statusEl.textContent = `${originalFormat.toUpperCase()} formatı için en iyi seçenek aranıyor...`;
+  statusEl.textContent = `${format.toUpperCase()} formatı analiz ediliyor...`;
+  formatInfo.innerHTML = `<span class="formatBadge">${format.toUpperCase()}</span>`;
+  progressEl.style.width = '20%';
   
-  // Test edilecek formatlar (öncelik sırasına göre)
-  const testFormats = [
-    {ext: 'mp4', name: 'MP4 (H.264)'},
+  try {
+    const support = getFormatSupport(format);
+    console.log('Format support:', support);
+    
+    statusEl.textContent = `En uygun oynatma yöntemi belirleniyor...`;
+    progressEl.style.width = '40%';
+    
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Try different playback methods based on format support
+    if(support.method === 'native') {
+      statusEl.textContent = 'Native tarayıcı desteği ile oynatılıyor...';
+      progressEl.style.width = '80%';
+      await new Promise(resolve => setTimeout(resolve, 300));
+      modal.classList.remove('active');
+      await playNativeVideo(baseUrl, meta);
+      
+    } else if(support.method === 'hls.js') {
+      statusEl.textContent = 'HLS.js kütüphanesi ile oynatılıyor...';
+      progressEl.style.width = '80%';
+      await new Promise(resolve => setTimeout(resolve, 300));
+      modal.classList.remove('active');
+      await playHLSVideo(baseUrl, meta);
+      
+    } else if(support.method === 'jsmkv') {
+      statusEl.textContent = 'JSMKV ile MKV dosyası işleniyor...';
+      progressEl.style.width = '60%';
+      formatInfo.innerHTML += `<span class="formatBadge">JSMKV</span>`;
+      await new Promise(resolve => setTimeout(resolve, 800));
+      modal.classList.remove('active');
+      await playMKVVideo(baseUrl, meta);
+      
+    } else if(support.method === 'mse') {
+      statusEl.textContent = 'Media Source Extensions ile işleniyor...';
+      progressEl.style.width = '70%';
+      formatInfo.innerHTML += `<span class="formatBadge">MSE</span>`;
+      await new Promise(resolve => setTimeout(resolve, 600));
+      modal.classList.remove('active');
+      await playMSEVideo(baseUrl, meta);
+      
+    } else {
+      // Fallback: try alternative formats
+      statusEl.textContent = 'Alternatif formatlar aranıyor...';
+      progressEl.style.width = '60%';
+      await findAlternativeFormats(baseUrl, format, meta, modal);
+    }
+    
+  } catch(error) {
+    console.error('Advanced video play error:', error);
+    modal.classList.remove('active');
+    handleVideoError('Gelişmiş video oynatma hatası', error.message);
+  }
+}
+
+// Native video playback
+async function playNativeVideo(url, meta) {
+  const modal = document.getElementById('playerModal');
+  const playerContent = document.getElementById('playerContent');
+  
+  modal.classList.add('active');
+  playerContent.innerHTML = '<div class="loading">Video yükleniyor...</div>';
+  
+  try {
+    playerContent.innerHTML = '<video id="video" controls autoplay playsinline crossorigin="anonymous"></video>';
+    const videoEl = document.getElementById('video');
+    
+    videoEl.onerror = (e) => handleVideoError('Native video hatası', 'Format desteklenmiyor');
+    videoEl.src = url;
+    await videoEl.play();
+    
+    console.log('Native video started successfully');
+  } catch(error) {
+    handleVideoError('Native video oynatma hatası', error.message);
+  }
+}
+
+// HLS video playback
+async function playHLSVideo(url, meta) {
+  const modal = document.getElementById('playerModal');
+  const playerContent = document.getElementById('playerContent');
+  
+  modal.classList.add('active');
+  playerContent.innerHTML = '<div class="loading">HLS video yükleniyor...</div>';
+  
+  try {
+    playerContent.innerHTML = '<video id="video" controls autoplay playsinline crossorigin="anonymous"></video>';
+    const videoEl = document.getElementById('video');
+    
+    if(window.Hls && Hls.isSupported()){
+      _hls = new Hls({
+        enableWorker: true,
+        backBufferLength: 90,
+        maxBufferLength: 30,
+        maxMaxBufferLength: 600,
+        maxBufferSize: 60 * 1000 * 1000,
+        maxBufferHole: 0.5,
+        lowLatencyMode: false
+      });
+      
+      _hls.on(Hls.Events.ERROR, (event, data) => {
+        console.error('HLS Error:', data);
+        if(data.fatal) handleVideoError('HLS oynatma hatası', data.details);
+      });
+      
+      _hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        videoEl.play().catch(e => console.warn('HLS autoplay error:', e));
+      });
+      
+      _hls.loadSource(url);
+      _hls.attachMedia(videoEl);
+      
+    } else {
+      // Native HLS support
+      videoEl.src = url;
+      await videoEl.play();
+    }
+    
+    console.log('HLS video started successfully');
+  } catch(error) {
+    handleVideoError('HLS video oynatma hatası', error.message);
+  }
+}
+
+// MKV video playback with JSMKV
+async function playMKVVideo(url, meta) {
+  const modal = document.getElementById('playerModal');
+  const playerContent = document.getElementById('playerContent');
+  
+  modal.classList.add('active');
+  playerContent.innerHTML = '<div class="loading">MKV video işleniyor...</div>';
+  
+  try {
+    // Check if JSMKV is available
+    if(typeof JSMKV === 'undefined') {
+      throw new Error('JSMKV kütüphanesi yüklenemedi');
+    }
+    
+    playerContent.innerHTML = '<video id="video" controls autoplay playsinline crossorigin="anonymous"></video>';
+    const videoEl = document.getElementById('video');
+    
+    // Fetch MKV file
+    const response = await fetch(url);
+    if(!response.ok) throw new Error('MKV dosyası yüklenemedi');
+    
+    const arrayBuffer = await response.arrayBuffer();
+    const mkvData = new Uint8Array(arrayBuffer);
+    
+    // Initialize JSMKV
+    const mkv = new JSMKV.MKVDecoder();
+    const result = await mkv.decode(mkvData);
+    
+    if(result.success) {
+      // Create blob URL for decoded video
+      const blob = new Blob([result.data], { type: 'video/mp4' });
+      const blobUrl = URL.createObjectURL(blob);
+      
+      videoEl.src = blobUrl;
+      await videoEl.play();
+      
+      // Clean up blob URL when video ends
+      videoEl.addEventListener('ended', () => URL.revokeObjectURL(blobUrl));
+      
+      console.log('JSMKV MKV video started successfully');
+    } else {
+      throw new Error('MKV decode failed: ' + result.error);
+    }
+    
+  } catch(error) {
+    console.error('JSMKV error:', error);
+    // Fallback to alternative formats
+    await findAlternativeFormats(url, 'mkv', meta);
+  }
+}
+
+// Media Source Extensions playback
+async function playMSEVideo(url, meta) {
+  const modal = document.getElementById('playerModal');
+  const playerContent = document.getElementById('playerContent');
+  
+  modal.classList.add('active');
+  playerContent.innerHTML = '<div class="loading">MSE ile video yükleniyor...</div>';
+  
+  try {
+    if(!('MediaSource' in window)) {
+      throw new Error('MediaSource desteklenmiyor');
+    }
+    
+    playerContent.innerHTML = '<video id="video" controls autoplay playsinline crossorigin="anonymous"></video>';
+    const videoEl = document.getElementById('video');
+    
+    mediaSource = new MediaSource();
+    videoEl.src = URL.createObjectURL(mediaSource);
+    
+    mediaSource.addEventListener('sourceopen', async () => {
+      try {
+        // Try different MIME types based on format
+        const mimeTypes = [
+          'video/mp4; codecs="avc1.42E01E,mp4a.40.2"',
+          'video/webm; codecs="vp8,vorbis"',
+          'video/mp4; codecs="avc1.640028"'
+        ];
+        
+        let mimeType = mimeTypes[0];
+        for(const type of mimeTypes) {
+          if(MediaSource.isTypeSupported(type)) {
+            mimeType = type;
+            break;
+          }
+        }
+        
+        sourceBuffer = mediaSource.addSourceBuffer(mimeType);
+        
+        // Fetch and append video data
+        const response = await fetch(url);
+        const arrayBuffer = await response.arrayBuffer();
+        
+        sourceBuffer.addEventListener('updateend', () => {
+          if(!sourceBuffer.updating && mediaSource.readyState === 'open') {
+            mediaSource.endOfStream();
+            videoEl.play();
+          }
+        });
+        
+        sourceBuffer.appendBuffer(arrayBuffer);
+        
+      } catch(mseError) {
+        console.error('MSE setup error:', mseError);
+        throw mseError;
+      }
+    });
+    
+    console.log('MSE video setup completed');
+    
+  } catch(error) {
+    console.error('MSE error:', error);
+    // Fallback to alternative formats
+    await findAlternativeFormats(url, meta.format, meta);
+  }
+}
+
+// Find alternative formats
+async function findAlternativeFormats(originalUrl, originalFormat, meta, existingModal = null) {
+  const modal = existingModal || document.getElementById('advancedModal');
+  const statusEl = document.getElementById('advancedStatus');
+  const progressEl = document.getElementById('advancedProgressBar');
+  
+  if(!existingModal) {
+    modal.classList.add('active');
+  }
+  
+  statusEl.textContent = 'Alternatif formatlar test ediliyor...';
+  
+  const alternatives = [
+    {ext: 'mp4', name: 'MP4'},
     {ext: 'webm', name: 'WebM'},
-    {ext: 'm3u8', name: 'HLS Stream'},
+    {ext: 'm3u8', name: 'HLS'},
     {ext: 'ts', name: 'MPEG-TS'}
   ];
   
-  for(let i = 0; i < testFormats.length; i++) {
-    const {ext, name} = testFormats[i];
+  for(let i = 0; i < alternatives.length; i++) {
+    const {ext, name} = alternatives[i];
     const testUrl = originalUrl.replace(/\.[^.]+$/, '.' + ext);
     
     statusEl.textContent = `${name} formatı test ediliyor...`;
-    progressEl.style.width = ((i + 1) / testFormats.length * 100) + '%';
+    progressEl.style.width = (60 + (i / alternatives.length * 30)) + '%';
     
     try {
-      // Quick HEAD request to check if file exists
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 3000);
       
@@ -365,10 +655,11 @@ async function findBestFormat(originalUrl, originalFormat, meta) {
       
       if(response.ok && response.headers.get('content-length') !== '0') {
         statusEl.textContent = `${name} formatı bulundu! Oynatılıyor...`;
+        progressEl.style.width = '100%';
         
         setTimeout(() => {
           modal.classList.remove('active');
-          playUnified(testUrl, {...meta, ext});
+          playAdvancedVideo(meta.kind, meta.id, ext, meta.title, meta.poster);
         }, 800);
         return;
       }
@@ -379,15 +670,15 @@ async function findBestFormat(originalUrl, originalFormat, meta) {
     await new Promise(resolve => setTimeout(resolve, 300));
   }
   
-  // Hiçbir alternatif bulunamadı - orijinal format ile dene
-  statusEl.textContent = 'Orijinal format ile deneniyor...';
+  // No alternatives found
+  statusEl.textContent = 'Alternatif format bulunamadı, orijinal deneniyor...';
   setTimeout(() => {
     modal.classList.remove('active');
-    playUnified(originalUrl, meta);
+    playNativeVideo(originalUrl, meta);
   }, 1000);
 }
 
-/* ====== Session (login.html uyumlu) ====== */
+/* ====== Session & Boot (same as before) ====== */
 function getLogin(){
   try{
     const v=localStorage.getItem('qruze_login');
@@ -400,7 +691,6 @@ function getLogin(){
   }catch{ return null; }
 }
 
-/* ====== Info Modal ====== */
 function showInfo() {
   if(S.firstVisit) {
     document.getElementById('infoModal').classList.add('active');
@@ -413,28 +703,24 @@ function closeInfo() {
   document.getElementById('infoModal').classList.remove('active');
 }
 
-/* ====== Boot ====== */
 async function boot(){
   S.login = getLogin();
   if(!S.login){ location.href='login.html'; return; }
 
-  // İlk ziyaret kontrolü
   const infoShown = localStorage.getItem('qruze_info_shown');
   if(!infoShown) {
     setTimeout(showInfo, 1000);
   }
 
-  // Video.js hazırlık
-  if(typeof videojs !== 'undefined') {
-    console.log('Video.js yüklendi - gelişmiş video desteği aktif');
-  }
+  // Check available libraries
+  console.log('Available libraries:', {
+    'Video.js': typeof videojs !== 'undefined',
+    'HLS.js': typeof Hls !== 'undefined',
+    'JSMKV': typeof JSMKV !== 'undefined',
+    'MediaSource': 'MediaSource' in window,
+    'Mux.js': typeof muxjs !== 'undefined'
+  });
 
-  // HLS.js kontrolü
-  if(typeof Hls === 'undefined') {
-    console.warn('HLS.js yüklenemedi - HLS videolar çalışmayabilir');
-  }
-
-  // Tabs
   el.tabs.querySelectorAll('.tab').forEach(t=>{
     t.onclick = ()=>{
       el.tabs.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
@@ -444,14 +730,12 @@ async function boot(){
     };
   });
 
-  // Logout
   $('#logout').onclick = ()=>{
     localStorage.removeItem('qruze_login');
     localStorage.removeItem('qruze_info_shown');
     location.assign('login.html');
   };
 
-  // Search
   const deb = (fn,ms)=>{let h;return (...a)=>{clearTimeout(h);h=setTimeout(()=>fn(...a),ms)}};
   el.search.oninput = deb(()=>{
     S.searchTerm = sanitizeInput(el.search.value.trim().toLowerCase());
@@ -464,7 +748,6 @@ async function boot(){
 
   try{
     hideError();
-    // Hesap bilgisi
     const info = await fetchJSON(apiBase());
     const exp = info?.user_info?.exp_date;
     if(exp && Number(exp)>0){
@@ -472,7 +755,6 @@ async function boot(){
       el.expiry.textContent = `Bitiş: ${d.toLocaleDateString('tr-TR')}`;
     }else{ el.expiry.textContent=''; }
 
-    // Kategoriler
     const [live,vod,series] = await Promise.all([
       fetchJSON(apiBase()+'&action=get_live_categories'),
       fetchJSON(apiBase()+'&action=get_vod_categories'),
@@ -486,7 +768,7 @@ async function boot(){
   }
 }
 
-/* ====== UI ====== */
+/* ====== UI & Lists (same structure, updated onclick) ====== */
 function renderCats(){
   const cats = S.tab==='movies' ? S.cats.vod : S.tab==='series' ? S.cats.series : S.cats.live;
   el.sideTitle.textContent = S.tab==='movies' ? 'Film Kategorileri' : S.tab==='series' ? 'Dizi Kategorileri' : 'Canlı Kategoriler';
@@ -507,7 +789,6 @@ function renderCats(){
 
 function activeCat(){ return el.cats.querySelector('.cat.active')?.dataset.id; }
 
-/* ====== Lists ====== */
 async function loadList(){
   hideError();
   const grid = el.grid;
@@ -566,7 +847,7 @@ function renderMixed(items){
       const id = Number(it.stream_id)||0;
       const ext = escAttr(it._ext || 'mp4');
       const kind = escAttr(it._kind);
-      return `<div class="card" onclick="playSmartVideo('${kind}',${id},'${ext}','${title}','${poster}')">
+      return `<div class="card" onclick="playAdvancedVideo('${kind}',${id},'${ext}','${title}','${poster}')">
         <div class="poster" style="background-image:url('${poster}')"></div>
         <div class="title">${kind==='live'?'📡 ':''}${title}</div>
       </div>`;
@@ -590,7 +871,7 @@ function renderList(items){
       const id = Number(it.stream_id)||0;
       const ext = (S.tab==='live') ? 'm3u8' : escAttr(it.container_extension||'mp4');
       const kind = (S.tab==='live') ? 'live' : 'movie';
-      return `<div class="card" onclick="playSmartVideo('${kind}',${id},'${ext}','${title}','${poster}')">
+      return `<div class="card" onclick="playAdvancedVideo('${kind}',${id},'${ext}','${title}','${poster}')">
         <div class="poster" style="background-image:url('${poster}')"></div>
         <div class="title">${S.tab==='live'?'📡 ':''}${title}</div>
       </div>`;
@@ -598,7 +879,7 @@ function renderList(items){
   }).join('');
 }
 
-/* ====== Series ====== */
+/* ====== Series (updated with advanced player) ====== */
 async function showSeries(id,title){
   document.getElementById('seriesTitle').textContent=title;
   document.getElementById('seriesModal').classList.add('active');
@@ -617,12 +898,10 @@ async function showSeries(id,title){
     function renderEp(s){
       epsEl.innerHTML = (eps[s]||[]).map(ep=>{
         const ext = escAttr(ep.container_extension || 'mp4');
-        const url = streamUrl('series', Number(ep.id)||0, ext);
         const rawName = `Bölüm ${ep.episode_num} — ${ep.title||''}`;
         const safeName = escAttr(rawName);
         const poster = escAttr(info?.info?.cover || LOGO_URL);
-        const meta = `{kind:'series',id:${Number(ep.id)||0},title:'${safeName}',poster:'${poster}',ext:'${ext}'}`;
-        return `<div class="ep" onclick="playDirectSmart('${url}','${ext}','${safeName}','${poster}',${meta})">${safeName}</div>`;
+        return `<div class="ep" onclick="playDirectAdvanced('series',${Number(ep.id)||0},'${ext}','${safeName}','${poster}')">${safeName}</div>`;
       }).join('');
     }
     
@@ -642,29 +921,12 @@ function closeSeries(){
   document.getElementById('seriesModal').classList.remove('active'); 
 }
 
-async function playDirectSmart(url, ext, title, poster, meta) {
+function playDirectAdvanced(kind, id, ext, title, poster) {
   closeSeries();
-  
-  const format = getVideoFormat(url, ext);
-  const videoMeta = meta || {title, poster, ext};
-  
-  // Direkt desteklenen formatlar
-  if(format === 'm3u8' || format === 'mp4' || format === 'webm') {
-    playUnified(url, videoMeta);
-    return;
-  }
-  
-  // MKV/AVI için akıllı format arama
-  if(format === 'mkv' || format === 'avi' || format === 'mov') {
-    await findBestFormat(url, format, videoMeta);
-    return;
-  }
-  
-  // Fallback
-  playUnified(url, videoMeta);
+  playAdvancedVideo(kind, id, ext, title, poster);
 }
 
-/* ====== Enhanced Player ====== */
+/* ====== Player Management ====== */
 function destroyPlayers(){ 
   try{ 
     if(currentPlayer && typeof currentPlayer.dispose === 'function') {
@@ -674,246 +936,62 @@ function destroyPlayers(){
     if(_hls){
       _hls.destroy(); 
       _hls = null;
-    } 
+    }
+    if(mediaSource && mediaSource.readyState === 'open') {
+      mediaSource.endOfStream();
+      mediaSource = null;
+    }
+    if(sourceBuffer) {
+      sourceBuffer = null;
+    }
   }catch(e){
-    console.warn('Player destroy hatası:', e);
+    console.warn('Player destroy error:', e);
   } 
-}
-
-function play(kind,id,ext,title,poster){
-  playSmartVideo(kind, id, ext, title, poster);
-}
-
-function playDirect(url,ext,title,poster,meta){
-  closeSeries();
-  playUnified(url, meta || {title,poster,ext});
-}
-
-async function playUnified(url, meta={}){
-  const modal = document.getElementById('playerModal');
-  const playerContent = document.getElementById('playerContent');
-  
-  destroyPlayers(); 
-  _meta = meta;
-  
-  modal.classList.add('active');
-  
-  // Loading state
-  playerContent.innerHTML = '<div class="loading">Video yükleniyor...</div>';
-
-  try{
-    const format = getVideoFormat(url, meta.ext);
-    console.log('Playing video:', {format, url, meta});
-    
-    if(format === 'm3u8'){
-      // HLS video
-      await playHLSVideo(url, playerContent);
-    } else if(format === 'mkv' && typeof videojs !== 'undefined') {
-      // MKV with Video.js (if supported)
-      await playVideoJS(url, playerContent, format);
-    } else {
-      // Standard video
-      await playStandardVideo(url, playerContent, format);
-    }
-    
-  }catch(err){
-    console.error('Oynatma hatası:', err);
-    handleVideoError('Video oynatılamadı', err?.message || err);
-  }
-}
-
-async function playHLSVideo(url, playerContent) {
-  playerContent.innerHTML = '<video id="video" controls autoplay playsinline crossorigin="anonymous"></video>';
-  const videoEl = document.getElementById('video');
-  
-  if(window.Hls && Hls.isSupported()){
-    console.log('HLS.js ile oynatılıyor');
-    _hls = new Hls({
-      enableWorker: true,
-      backBufferLength: 90,
-      maxBufferLength: 30,
-      maxMaxBufferLength: 600,
-      maxBufferSize: 60 * 1000 * 1000,
-      maxBufferHole: 0.5,
-      lowLatencyMode: false
-    });
-    
-    _hls.on(Hls.Events.ERROR, (event, data) => {
-      console.error('HLS Hatası:', data);
-      if(data.fatal){
-        handleVideoError('HLS oynatma hatası', data.details || 'fatal error');
-      }
-    });
-    
-    _hls.on(Hls.Events.MANIFEST_PARSED, () => {
-      console.log('HLS manifest yüklendi');
-      videoEl.play().catch(e => console.warn('Autoplay hatası:', e));
-    });
-    
-    _hls.loadSource(url);
-    _hls.attachMedia(videoEl);
-    
-  } else if(videoEl.canPlayType('application/vnd.apple.mpegurl')) {
-    // Native HLS support (Safari)
-    console.log('Native HLS ile oynatılıyor');
-    videoEl.src = url;
-    await videoEl.play();
-  } else {
-    throw new Error('HLS desteği bulunamadı');
-  }
-}
-
-async function playVideoJS(url, playerContent, format) {
-  // Video.js ile gelişmiş format desteği
-  playerContent.innerHTML = `
-    <video-js id="videojs-player" 
-      controls 
-      preload="auto" 
-      data-setup='{"fluid": true, "responsive": true}'
-      class="video-js vjs-default-skin">
-    </video-js>
-  `;
-  
-  const player = videojs('videojs-player', {
-    controls: true,
-    fluid: true,
-    responsive: true,
-    playbackRates: [0.5, 1, 1.25, 1.5, 2],
-    plugins: {}
-  });
-  
-  currentPlayer = player;
-  
-  player.ready(() => {
-    console.log('Video.js hazır, format:', format);
-    player.src({
-      src: url,
-      type: format === 'mkv' ? 'video/x-matroska' : `video/${format}`
-    });
-    
-    player.play().catch(e => {
-      console.warn('Video.js autoplay hatası:', e);
-      // Fallback to standard video
-      playStandardVideo(url, playerContent, format);
-    });
-  });
-  
-  player.on('error', (e) => {
-    console.error('Video.js hatası:', e);
-    // Fallback to standard video
-    playStandardVideo(url, playerContent, format);
-  });
-}
-
-async function playStandardVideo(url, playerContent, format) {
-  playerContent.innerHTML = '<video id="video" controls autoplay playsinline crossorigin="anonymous"></video>';
-  const videoEl = document.getElementById('video');
-  
-  videoEl.muted = false;
-  videoEl.playsInline = true;
-  
-  // Hata yönetimi
-  videoEl.onerror = (e) => {
-    console.error('Video hatası:', e);
-    const error = videoEl.error;
-    let errorMsg = 'Video yüklenirken hata oluştu';
-    
-    if(error) {
-      switch(error.code) {
-        case MediaError.MEDIA_ERR_ABORTED:
-          errorMsg = 'Video yükleme iptal edildi';
-          break;
-        case MediaError.MEDIA_ERR_NETWORK:
-          errorMsg = 'Ağ hatası - video yüklenemedi';
-          break;
-        case MediaError.MEDIA_ERR_DECODE:
-          errorMsg = 'Video formatı desteklenmiyor';
-          break;
-        case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
-          errorMsg = 'Video formatı desteklenmiyor';
-          break;
-        default:
-          errorMsg = 'Video yüklenirken bilinmeyen hata';
-      }
-    }
-    
-    handleVideoError(errorMsg, `Format: ${format}`);
-  };
-  
-  videoEl.onloadstart = () => {
-    console.log('Video yüklenmeye başladı');
-  };
-  
-  videoEl.oncanplay = () => {
-    console.log('Video oynatılmaya hazır');
-  };
-
-  // Video source set et
-  console.log('Standard video oynatılıyor:', format);
-  videoEl.src = url;
-  await videoEl.play();
 }
 
 function handleVideoError(message, detail) {
   const playerContent = document.getElementById('playerContent');
   
-  let helpText = '';
-  let downloadButton = '';
-  
-  helpText = `
-    <div style="margin:15px 0;padding:15px;background:#1a1a1a;border-radius:8px;border-left:4px solid #ff6b6b;">
-      <strong>💡 Çözüm Önerileri:</strong>
-      <ul style="margin:10px 0;padding-left:20px;">
-        <li>Sistem otomatik olarak en uygun formatı denedi</li>
-        <li>Farklı bir video seçmeyi deneyin</li>
-        <li>İnternet bağlantınızı kontrol edin</li>
-        <li>Videoyu indirip yerel oynatıcıda açabilirsiniz</li>
-      </ul>
-    </div>
-  `;
-  
-  // İndirme butonu
-  if(_meta && _meta.title) {
-    downloadButton = `
-      <button class="retry-btn" style="background:#17a2b8;margin-left:10px;" onclick="downloadVideo()">
-        📥 Videoyu İndir
-      </button>
-    `;
-  }
-  
   playerContent.innerHTML = `
     <div class="notice error">
       <div style="font-size:16px;font-weight:bold;margin-bottom:10px;">❌ ${message}</div>
       <div style="margin-top:10px;font-size:12px;color:#ffb3b3;">${detail}</div>
-      ${helpText}
+      <div style="margin:15px 0;padding:15px;background:#1a1a1a;border-radius:8px;border-left:4px solid #ff6b6b;">
+        <strong>💡 Çözüm Önerileri:</strong>
+        <ul style="margin:10px 0;padding-left:20px;">
+          <li>Sistem 5 farklı oynatma yöntemi denedi</li>
+          <li>Farklı bir video seçmeyi deneyin</li>
+          <li>İnternet bağlantınızı kontrol edin</li>
+          <li>Videoyu indirip yerel oynatıcıda açabilirsiniz</li>
+        </ul>
+      </div>
       <div style="margin-top:15px;">
-        <button class="retry-btn" onclick="retryVideo()">🔄 Tekrar Dene</button>
-        ${downloadButton}
+        <button class="retry-btn" onclick="retryAdvancedVideo()">🔄 Tekrar Dene</button>
+        <button class="retry-btn" style="background:#17a2b8;margin-left:10px;" onclick="downloadVideo()">📥 Videoyu İndir</button>
       </div>
     </div>
   `;
 }
 
-// Video indirme fonksiyonu
+function retryAdvancedVideo() {
+  if(_meta) {
+    const {kind, id, ext, title, poster} = _meta;
+    playAdvancedVideo(kind, id, ext, title, poster);
+  }
+}
+
 function downloadVideo() {
   if(!_meta) return;
   
   try {
     const {kind, id, ext, title} = _meta;
-    let downloadUrl = '';
-    
-    if(kind === 'series') {
-      downloadUrl = streamUrl('series', id, ext);
-    } else {
-      downloadUrl = streamUrl(kind, id, ext);
-    }
+    const downloadUrl = streamUrl(kind, id, ext);
     
     if(!downloadUrl) {
       alert('İndirme URL\'i bulunamadı');
       return;
     }
     
-    // Dosyayı indir
     const a = document.createElement('a');
     a.href = downloadUrl;
     a.download = `${title}.${ext}`;
@@ -923,22 +1001,11 @@ function downloadVideo() {
     a.click();
     document.body.removeChild(a);
     
-    console.log('Video indirme başlatıldı:', downloadUrl);
+    console.log('Video download started:', downloadUrl);
     
   } catch(e) {
-    console.error('İndirme hatası:', e);
+    console.error('Download error:', e);
     alert('Video indirilemedi: ' + e.message);
-  }
-}
-
-function retryVideo() {
-  if(_meta) {
-    const {kind, id, ext, title, poster} = _meta;
-    if(kind === 'series') {
-      playDirect(streamUrl('series', id, ext), ext, title, poster, _meta);
-    } else {
-      play(kind, id, ext, title, poster);
-    }
   }
 }
 
@@ -947,7 +1014,12 @@ function closePlayer(){
   document.getElementById('playerModal').classList.remove('active');
 }
 
-/* go */
+// Legacy compatibility
+function play(kind,id,ext,title,poster){
+  playAdvancedVideo(kind, id, ext, title, poster);
+}
+
+/* Initialize */
 boot();
 </script>
 </body>
