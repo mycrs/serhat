@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>QRUZE Player — Giriş</title>
+    <style>
+        :root{
+            --bg:#0b0d10; --bg2:#101419; --panel:#12161b; --mut:#a9b0b7; --line:#ffffff1a;
+            --accent:#ff2f3f; --accent2:#ff6b6b; --chip:#1a2028;
+        }
+        *{box-sizing:border-box}
+        html,body{height:100%; margin:0; background:linear-gradient(180deg,var(--bg),var(--bg2)); color:#fff; font:14px/1.45 system-ui,Segoe UI,Roboto}
+        
+        .container{display:flex; align-items:center; justify-content:center; min-height:100vh; padding:20px}
+        .loginBox{width:min(400px,90vw); background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:32px; text-align:center}
+        .logo{width:80px; height:80px; border-radius:16px; margin:0 auto 24px; display:block}
+        h1{margin:0 0 32px; font-size:28px; font-weight:900; color:#ffce00}
+        
+        .form{display:flex; flex-direction:column; gap:20px}
+        .inputGroup{text-align:left}
+        .inputGroup label{display:block; margin-bottom:8px; color:var(--mut); font-size:12px; text-transform:uppercase; letter-spacing:.5px}
+        .inputGroup input{width:100%; padding:14px 16px; border:1px solid var(--line); border-radius:10px; background:#0f141b; color:#eaf1f7; font-size:16px}
+        .inputGroup input:focus{outline:none; border-color:var(--accent)}
+        
+        .btn{width:100%; padding:16px; border:0; border-radius:10px; background:linear-gradient(180deg,var(--accent),var(--accent2)); color:#000; font-weight:800; font-size:16px; cursor:pointer; transition:.2s}
+        .btn:hover{transform:translateY(-2px); box-shadow:0 8px 25px rgba(255,47,63,.3)}
+        .btn:disabled{opacity:.6; cursor:not-allowed; transform:none}
+        
+        .error{color:#ff6b6b; background:#ff6b6b1a; border:1px solid #ff6b6b33; padding:12px; border-radius:8px; margin-top:16px; display:none}
+        .loading{display:none; margin-top:16px}
+        .spinner{width:20px; height:20px; border:2px solid #ffffff33; border-top-color:#fff; border-radius:50%; animation:spin 1s linear infinite; margin:0 auto}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        
+        .info{margin-top:24px; padding:16px; background:#0f141b; border-radius:8px; border:1px solid var(--line)}
+        .info h3{margin:0 0 12px; color:#ffce00; font-size:14px}
+        .info p{margin:0; color:var(--mut); font-size:12px; line-height:1.5}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="loginBox">
+            <img src="https://r.resimlink.com/EF6iCMJljshD.jpg?v=3589570a6c61ea27be9a4fc81245fbd5" alt="QRUZE Player" class="logo">
+            <h1>QRUZE Player</h1>
+            
+            <form class="form" id="loginForm">
+                <div class="inputGroup">
+                    <label for="host">Sunucu Adresi</label>
+                    <input type="url" id="host" placeholder="https://example.com" required>
+                </div>
+                
+                <div class="inputGroup">
+                    <label for="username">Kullanıcı Adı</label>
+                    <input type="text" id="username" placeholder="Kullanıcı adınız" required>
+                </div>
+                
+                <div class="inputGroup">
+                    <label for="password">Şifre</label>
+                    <input type="password" id="password" placeholder="Şifreniz" required>
+                </div>
+                
+                <button type="submit" class="btn" id="loginBtn">Giriş Yap</button>
+            </form>
+            
+            <div class="error" id="error"></div>
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <div style="margin-top:8px; color:var(--mut)">Giriş yapılıyor...</div>
+            </div>
+            
+            <div class="info">
+                <h3>Giriş Bilgileri</h3>
+                <p>IPTV servis sağlayıcınızdan aldığınız bilgileri girin. Sunucu adresi genellikle "https://" ile başlar.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const KEY = 'qruze_login';
+        
+        // Form elementleri
+        const form = document.getElementById('loginForm');
+        const hostInput = document.getElementById('host');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const loginBtn = document.getElementById('loginBtn');
+        const errorDiv = document.getElementById('error');
+        const loadingDiv = document.getElementById('loading');
+        
+        // Hata göster
+        function showError(msg) {
+            errorDiv.textContent = msg;
+            errorDiv.style.display = 'block';
+            setTimeout(() => errorDiv.style.display = 'none', 5000);
+        }
+        
+        // Loading durumu
+        function setLoading(loading) {
+            loginBtn.disabled = loading;
+            loadingDiv.style.display = loading ? 'block' : 'none';
+        }
+        
+        // API test
+        async function testConnection(host, username, password) {
+            const url = `${host}/player_api.php?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`;
+            
+            try {
+                const response = await fetch(url, { 
+                    method: 'GET',
+                    mode: 'cors',
+                    timeout: 10000
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.text();
+                try {
+                    const json = JSON.parse(data);
+                    if (json.user_info) {
+                        return { success: true, data: json };
+                    } else {
+                        throw new Error('Geçersiz API yanıtı');
+                    }
+                } catch (e) {
+                    throw new Error('API yanıtı JSON formatında değil');
+                }
+            } catch (error) {
+                throw new Error(`Bağlantı hatası: ${error.message}`);
+            }
+        }
+        
+        // Form submit
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const host = hostInput.value.trim();
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value.trim();
+            
+            if (!host || !username || !password) {
+                showError('Lütfen tüm alanları doldurun');
+                return;
+            }
+            
+            // Host URL formatını kontrol et
+            let finalHost = host;
+            if (!host.startsWith('http://') && !host.startsWith('https://')) {
+                finalHost = 'https://' + host;
+            }
+            
+            setLoading(true);
+            
+            try {
+                const result = await testConnection(finalHost, username, password);
+                
+                if (result.success) {
+                    // Giriş başarılı - bilgileri kaydet
+                    const loginData = {
+                        host: finalHost,
+                        user: username,
+                        pass: password,
+                        timestamp: Date.now()
+                    };
+                    
+                    localStorage.setItem(KEY, JSON.stringify(loginData));
+                    
+                    // Ana sayfaya yönlendir
+                    window.location.href = 'index.html';
+                }
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                setLoading(false);
+            }
+        });
+        
+        // Sayfa yüklendiğinde mevcut giriş bilgilerini kontrol et
+        window.addEventListener('load', () => {
+            try {
+                const existing = localStorage.getItem(KEY);
+                if (existing) {
+                    const data = JSON.parse(existing);
+                    if (data.host && data.user && data.pass) {
+                        // Zaten giriş yapılmış, ana sayfaya yönlendir
+                        window.location.href = 'index.html';
+                    }
+                }
+            } catch (e) {
+                // Hatalı veri, temizle
+                localStorage.removeItem(KEY);
+            }
+        });
+    </script>
+</body>
+</html>
