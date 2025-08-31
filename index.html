@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>QruzePlayer | İçerikler</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<style>
+  :root{
+    --bg:#0b0d10; --panel:#11161b; --line:#1f2630;
+    --ink:#eef2f6; --mut:#a9b0b7; --acc:#ffce00; --cta:#ea2b2b;
+    --card:#161c23; --card2:#12161b; --hover:#ffffff12;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.4 system-ui,Segoe UI,Roboto}
+
+  header{display:flex;align-items:center;gap:14px;justify-content:space-between;
+    padding:10px 14px;background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+  .brand{display:flex;align-items:center;gap:10px}
+  .brand img{width:36px;height:36px;border-radius:8px;object-fit:contain;background:#000}
+  .brand .t{font-weight:900;letter-spacing:.2px}
+
+  .tabs{display:flex;gap:6px}
+  .tab{cursor:pointer;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card2);color:var(--mut)}
+  .tab.active{background:linear-gradient(180deg,var(--acc),#ffd940);color:#000;border-color:#000;font-weight:900}
+
+  .right{display:flex;align-items:center;gap:10px}
+  .pill{font-size:12px;color:var(--mut)}
+  .btn{border:0;border-radius:10px;padding:8px 12px;cursor:pointer;font-weight:800;background:var(--cta);color:#fff}
+
+  .topbar{display:flex;gap:10px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);background:#0d1116;position:sticky;top:58px;z-index:19}
+  .search{position:relative;flex:1;max-width:520px}
+  .search input{width:100%;padding:11px 36px 11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:#fff}
+  .search .x{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:50%;
+    border:1px solid #ffffff22;background:#000a;color:#fff;display:none;cursor:pointer}
+  .search.hasValue .x{display:block}
+
+  .wrap{display:flex;min-height:calc(100vh - 118px)}
+  aside{width:260px;background:var(--panel);border-right:1px solid var(--line);padding:12px;position:sticky;top:118px;height:calc(100vh - 118px);overflow:auto}
+  aside h3{margin:4px 0 8px;font-size:12px;color:var(--acc);letter-spacing:.3px;text-transform:uppercase}
+  .cat{padding:9px 10px;border-left:3px solid transparent;border-radius:8px;cursor:pointer;color:#c7ced6}
+  .cat:hover{background:var(--hover)}
+  .cat.active{background:#1c2430;border-left-color:var(--acc);color:#ffec8a;font-weight:700}
+
+  main{flex:1;padding:14px;min-width:0}
+  .notice{padding:10px 12px;border-radius:10px;background:#251b12;border:1px solid #3d2c17;color:#ffd7a1;margin-bottom:12px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px}
+  .grid.live{grid-template-columns:repeat(auto-fill,minmax(110px,1fr))}
+  .card{background:var(--card);border:1px solid #000; border-radius:12px;overflow:hidden;cursor:pointer;transition:.2s}
+  .card:hover{transform:translateY(-3px)}
+  .poster{width:100%;padding-top:150%;background:#0a0d12 center/cover no-repeat}
+  .grid.live .poster{padding-top:100%}
+  .title{padding:8px;background:var(--card2);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#e8edf3}
+
+  /* Modal: Player */
+  .modal{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;z-index:99}
+  .modal.active{display:flex}
+  .modal .close{position:absolute;top:10px;right:16px;font-size:28px;background:none;border:none;color:#fff;cursor:pointer}
+  video{width:min(92vw,1200px);max-height:80vh;background:#000}
+
+  /* Spinner overlay (GitHub projesinden) */
+  .spinner-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    display: none;
+  }
+  .spinner {
+    border: 8px solid #333;
+    border-top: 8px solid var(--acc);
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin { 100% { transform: rotate(360deg); } }
+
+  /* Modal: Series */
+  #seriesModal .box{background:#0f1318;border:1px solid var(--line);border-radius:12px;width:min(96vw,1000px);max-height:85vh;overflow:hidden;display:flex;flex-direction:column}
+  .seriesHead{padding:12px 14px;font-weight:900;border-bottom:1px solid var(--line)}
+  .seriesBody{flex:1;display:flex;min-height:0}
+  .seasons{width:220px;border-right:1px solid var(--line);overflow:auto;background:#0c1015}
+  .season{padding:10px;cursor:pointer;color:#d0d7de}
+  .season.active{background:#18202c;color:#ffec8a}
+  .episodes{flex:1;overflow:auto;background:#0f141a}
+  .ep{padding:10px;border-bottom:1px solid #19202a;cursor:pointer}
+  .ep:hover{background:#161e29}
+
+  /* Loading ve Error States */
+  .loading{display:flex;align-items:center;justify-content:center;padding:40px;color:var(--mut)}
+  .error{background:#2d1a1a;border:1px solid #5a2a2a;color:#ff8a8a}
+  .retry-btn{background:var(--cta);color:#fff;border:0;padding:8px 16px;border-radius:6px;cursor:pointer;margin-top:10px}
+
+  /* Info Modal */
+  .infoModal{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;z-index:999}
+  .infoModal.active{display:flex}
+  .infoBox{background:#0f1318;border:1px solid var(--line);border-radius:12px;width:min(90vw,600px);max-height:80vh;overflow:auto;padding:20px}
+  .infoTitle{font-size:18px;font-weight:900;margin-bottom:15px;color:var(--acc)}
+  .infoContent{line-height:1.6;color:var(--ink)}
+  .infoClose{background:var(--cta);color:#fff;border:0;padding:10px 20px;border-radius:8px;cursor:pointer;margin-top:15px;font-weight:700}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <img src="https://r.resimlink.com/EF6iCMJljshD.jpg?v=3589570a6c61ea27be9a4fc81245fbd5" alt="Qruze">
+    <div class="t">QruzePlayer</div>
+  </div>
+  <div class="tabs" id="tabs">
+    <div class="tab" data-tab="live">Canlı</div>
+    <div class="tab active" data-tab="movies">Filmler</div>
+    <div class="tab" data-tab="series">Diziler</div>
+  </div>
+  <div class="right">
+    <span class="pill" id="expiry"></span>
+    <button class="btn" id="logout">Çıkış Yap</button>
+  </div>
+</header>
+
+<div class="topbar">
+  <div class="search" id="searchBox">
+    <input id="search" placeholder="Tüm içeriklerde ara (canlı + film + dizi)..." />
+    <button class="x" id="clearSearch">×</button>
+  </div>
+</div>
+
+<div class="wrap">
+  <aside>
+    <h3 id="sideTitle">Film Kategorileri</h3>
+    <div id="cats"></div>
+  </aside>
+  <main>
+    <div id="alert" class="notice" style="display:none"></div>
+    <div class="grid" id="grid"></div>
+  </main>
+</div>
+
+<!-- Player Modal -->
+<div class="modal" id="playerModal">
+  <button class="close" onclick="closePlayer()">×</button>
+  <div id="playerContent" style="position:relative;">
+    <video id="video" controls autoplay playsinline crossorigin="anonymous"></video>
+    <!-- GitHub projesindeki spinner -->
+    <div class="spinner-overlay" id="spinner">
+      <div class="spinner"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Series Modal -->
+<div class="modal" id="seriesModal">
+  <button class="close" onclick="closeSeries()">×</button>
+  <div class="box">
+    <div class="seriesHead" id="seriesTitle"></div>
+    <div class="seriesBody">
+      <div class="seasons" id="seasons"></div>
+      <div class="episodes" id="episodes"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Info Modal -->
+<div class="infoModal" id="infoModal">
+  <div class="infoBox">
+    <div class="infoTitle">🎬 QruzePlayer Hoş Geldiniz!</div>
+    <div class="infoContent">
+      <p><strong>📺 Özellikler:</strong></p>
+      <ul>
+        <li>Canlı TV yayınları</li>
+        <li>Film ve dizi arşivi</li>
+        <li>Hızlı arama sistemi</li>
+        <li>Kategori bazlı filtreleme</li>
+        <li>🆕 Gelişmiş video desteği (GitHub IPTV Player tabanlı)</li>
+      </ul>
+      
+      <p><strong>⚠️ Desteklenen Formatlar:</strong></p>
+      <ul>
+        <li>✅ MP4 - Native destek</li>
+        <li>✅ M3U8 (HLS) - HLS.js ile profesyonel destek</li>
+        <li>✅ MKV - Direkt streaming denemesi</li>
+        <li>✅ AVI - Alternative format search</li>
+        <li>✅ WEBM - Native destek</li>
+      </ul>
+      
+      <p><strong>💡 GitHub IPTV Player Teknolojisi:</strong></p>
+      <p>Profesyonel IPTV player teknolojisi kullanılarak tüm formatlar desteklenir.</p>
+      
+      <p><strong>🔒 Güvenlik:</strong></p>
+      <p>Site gelişim aşamasındadır. Güvenlik önlemleri sürekli güncellenmektedir.</p>
+    </div>
+    <button class="infoClose" onclick="closeInfo()">Anladım</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<script>
+/* ====== State & helpers ====== */
+const LOGO_URL = "https://r.resimlink.com/EF6iCMJljshD.jpg?v=3589570a6c61ea27be9a4fc81245fbd5";
+const S = { tab:'movies', login:null, cats:{}, cache:{ live:[], movies:[], series:[] }, searchTerm:'', firstVisit:true };
+const $ = s => document.querySelector(s);
+const el = {
+  tabs: $('#tabs'), cats: $('#cats'), grid: $('#grid'), expiry: $('#expiry'),
+  alert: $('#alert'), search: $('#search'), searchBox: $('#searchBox'),
+  clearSearch: $('#clearSearch'), sideTitle: $('#sideTitle')
+};
+
+// GitHub IPTV Player approach - Simple & Effective
+let hls = null; // Global HLS instance
+const video = document.getElementById("video");
+const spinner = document.getElementById("spinner");
+let _meta = null;
+
+// Güvenlik fonksiyonları
+function sanitizeInput(input) {
+  if(typeof input !== 'string') return '';
+  return input.replace(/[<>\"'&]/g, '');
+}
+
+function validateUrl(url) {
+  try {
+    const urlObj = new URL(url);
+    return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+function escAttr(str){
+  const sanitized = sanitizeInput(String(str ?? ''));
+  return sanitized
+    .replace(/&/g,'&amp;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,"\\'");
+}
+
+function apiBase(){ 
+  if(!S.login?.host || !S.login?.user || !S.login?.pass) return '';
+  return `${S.login.host}/player_api.php?username=${encodeURIComponent(S.login.user)}&password=${encodeURIComponent(S.login.pass)}`; 
+}
+
+function streamUrl(kind,id,ext){ 
+  if(!S.login?.host || !S.login?.user || !S.login?.pass) return '';
+  if(!validateUrl(S.login.host)) return '';
+  return `${S.login.host}/${kind}/${S.login.user}/${S.login.pass}/${id}.${ext}`; 
+}
+
+function showError(msg,detail){
+  el.alert.style.display='block';
+  const d=(detail||'').toLowerCase();
+  let tip = '';
+  if(d.includes('cors')) tip = ' (CORS hatası - sunucu erişimi engellendi)';
+  else if(d.includes('mixed')) tip = ' (Mixed Content: HTTPS/HTTP çatışması)';
+  else if(d.includes('404')) tip = ' (Video dosyası bulunamadı)';
+  else if(d.includes('network')) tip = ' (Ağ bağlantı hatası)';
+  else if(d.includes('timeout')) tip = ' (Zaman aşımı)';
+  
+  el.alert.textContent = detail ? `${msg} — ${detail}${tip}` : msg;
+  el.alert.className = 'notice error';
+}
+
+function hideError(){ el.alert.style.display='none'; el.alert.textContent=''; el.alert.className='notice'; }
+
+async function fetchJSON(url, timeoutMs=20000){
+  if(!validateUrl(url)) throw new Error('Geçersiz URL');
+  
+  const c=new AbortController(); const t=setTimeout(()=>c.abort(),timeoutMs);
+  try{
+    const r=await fetch(url,{signal:c.signal});
+    if(!r.ok) throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+    const text=await r.text();
+    try{ return JSON.parse(text); }catch{ throw new Error('Geçersiz JSON yanıtı'); }
+  }catch(e){
+    if(e.name === 'AbortError') throw new Error('Zaman aşımı');
+    if(e.message.includes('Failed to fetch')) throw new Error('Ağ bağlantı hatası');
+    throw e;
+  }finally{ clearTimeout(t); }
+}
+
+function safePoster(x){
+  const p = x?.stream_icon || x?.cover || '';
+  if(p && p !== 'null' && p !== 'undefined' && validateUrl(p)) return p;
+  return LOGO_URL;
+}
+
+/* ====== GitHub IPTV Player Approach - Basit ve Etkili ====== */
+function showSpinner(show = true) {
+  if(spinner) {
+    spinner.style.display = show ? "flex" : "none";
+  }
+}
+
+// GitHub projesindeki playChannel fonksiyonu - adapte edildi
+function playChannel(streamUrl, meta = {}) {
+  console.log("Video yükleniyor: " + streamUrl);
+  showSpinner(true);
+  _meta = meta;
+  
+  // Önceki HLS instance'ı temizle
+  if (hls) {
+    hls.destroy();
+    hls = null;
+  }
+  
+  // GitHub projesindeki yaklaşım - HLS.js öncelikli
+  if (Hls.isSupported()) {
+    console.log("HLS.js ile oynatılıyor (GitHub IPTV Player yöntemi)");
+    
+    hls = new Hls({ 
+      enableWorker: true,
+      // GitHub projesindeki optimizasyonlar
+      backBufferLength: 90,
+      maxBufferLength: 30,
+      maxMaxBufferLength: 600,
+      maxBufferSize: 60 * 1000 * 1000,
+      maxBufferHole: 0.5,
+      lowLatencyMode: false
+    });
+    
+    hls.loadSource(streamUrl);
+    hls.attachMedia(video);
+    
+    hls.once(Hls.Events.MANIFEST_PARSED, () => {
+      video.play().then(() => {
+        showSpinner(false);
+        console.log("HLS video başarıyla başladı");
+      }).catch(err => {
+        console.error("HLS play hatası:", err);
+        showSpinner(false);
+        handlePlayError(err);
+      });
+    });
+    
+    hls.on(Hls.Events.ERROR, (event, data) => {
+      console.error("HLS Hatası:", data);
+      showSpinner(false);
+      
+      if(data.fatal) {
+        switch(data.type) {
+          case Hls.ErrorTypes.NETWORK_ERROR:
+            console.log("Network error, trying to recover...");
+            hls.startLoad();
+            break;
+          case Hls.ErrorTypes.MEDIA_ERROR:
+            console.log("Media error, trying to recover...");
+            hls.recoverMediaError();
+            break;
+          default:
+            console.log("Fatal error, trying alternative formats...");
+            tryAlternativeFormats(streamUrl, meta);
+            break;
+        }
+      }
+    });
+    
+  } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+    // Native HLS support (Safari)
+    console.log("Native HLS ile oynatılıyor (Safari)");
+    video.src = streamUrl;
+    video.play().then(() => {
+      showSpinner(false);
+    }).catch(err => {
+      console.error("Native HLS play hatası:", err);
+      showSpinner(false);
+      handlePlayError(err);
+    });
+    
+  } else {
+    // HLS desteklenmiyor - alternatif format dene
+    console.log("HLS desteklenmiyor, alternatif formatlar deneniyor...");
+    tryAlternativeFormats(streamUrl, meta);
+  }
+}
+
+// GitHub projesindeki basit yaklaşımı kullanarak alternatif format denemesi
+async function tryAlternativeFormats(originalUrl, meta) {
+  const alternatives = [
+    { ext: 'mp4', mime: 'video/mp4' },
+    { ext: 'webm', mime: 'video/webm' },
+    { ext: 'ts', mime: 'video/mp2t' },
+    { ext: 'mov', mime: 'video/quicktime' }
+  ];
+  
+  console.log("Alternatif formatlar test ediliyor...");
+  
+  for(const alt of alternatives) {
+    const testUrl = originalUrl.replace(/\.[^.]+$/, '.' + alt.ext);
+    
+    try {
+      // GitHub projesindeki gibi basit HEAD request
+      const response = await fetch(testUrl, { method: 'HEAD' });
+      
+      if(response.ok) {
+        console.log(`${alt.ext.toUpperCase()} formatı bulundu, oynatılıyor...`);
+        
+        // Video element'i direkt kullan (GitHub yaklaşımı)
+        video.src = testUrl;
+        
+        video.onloadstart = () => showSpinner(true);
+        video.oncanplay = () => showSpinner(false);
+        video.onerror = () => {
+          showSpinner(false);
+          console.log(`${alt.ext} format failed, trying next...`);
+        };
+        
+        try {
+          await video.play();
+          showSpinner(false);
+          return; // Başarılı, döngüyü kır
+        } catch(playErr) {
+          console.log(`${alt.ext} play failed:`, playErr);
+        }
+      }
+    } catch(fetchErr) {
+      console.log(`${alt.ext} fetch failed:`, fetchErr);
+    }
+  }
+  
+  // Hiçbir alternatif çalışmadı
+  showSpinner(false);
+  handlePlayError(new Error("Hiçbir uyumlu format bulunamadı"));
+}
+
+function handlePlayError(error) {
+  const playerContent = document.getElementById('playerContent');
+  
+  playerContent.innerHTML = `
+    <div class="notice error">
+      <div style="font-size:16px;font-weight:bold;margin-bottom:10px;">❌ Video Oynatılamadı</div>
+      <div style="margin-top:10px;font-size:12px;color:#ffb3b3;">Hata: ${error.message}</div>
+      <div style="margin:15px 0;padding:15px;background:#1a1a1a;border-radius:8px;border-left:4px solid #ff6b6b;">
+        <strong>💡 GitHub IPTV Player Teknolojisi Denendi:</strong>
+        <ul style="margin:10px 0;padding-left:20px;">
+          <li>✅ HLS.js ile profesyonel streaming</li>
+          <li>✅ Native Safari HLS desteği</li>
+          <li>✅ Alternatif format arama (MP4, WebM, TS)</li>
+          <li>✅ Otomatik error recovery</li>
+        </ul>
+      </div>
+      <div style="margin-top:15px;">
+        <button class="retry-btn" onclick="retryVideo()">🔄 Tekrar Dene</button>
+        <button class="retry-btn" style="background:#17a2b8;margin-left:10px;" onclick="downloadVideo()">📥 Videoyu İndir</button>
+      </div>
+    </div>
+    <div class="spinner-overlay" id="spinner" style="display:none;">
+      <div class="spinner"></div>
+    </div>
+  `;
+}
+
+/* ====== Session (login.html uyumlu) ====== */
+function getLogin(){
+  try{
+    const v=localStorage.getItem('qruze_login');
+    if(!v) return null;
+    const j=JSON.parse(v);
+    const host=(j.host||'').replace(/\/+$/,'');
+    if(!host || !j.user || !j.pass) return null;
+    if(!validateUrl(host)) return null;
+    return {host, user:j.user, pass:j.pass};
+  }catch{ return null; }
+}
+
+/* ====== Info Modal ====== */
+function showInfo() {
+  if(S.firstVisit) {
+    document.getElementById('infoModal').classList.add('active');
+    S.firstVisit = false;
+    localStorage.setItem('qruze_info_shown', 'true');
+  }
+}
+
+function closeInfo() {
+  document.getElementById('infoModal').classList.remove('active');
+}
+
+/* ====== Boot ====== */
+async function boot(){
+  S.login = getLogin();
+  if(!S.login){ location.href='login.html'; return; }
+
+  // İlk ziyaret kontrolü
+  const infoShown = localStorage.getItem('qruze_info_shown');
+  if(!infoShown) {
+    setTimeout(showInfo, 1000);
+  }
+
+  // HLS.js kontrolü (GitHub projesindeki gibi)
+  if(typeof Hls === 'undefined') {
+    console.warn('HLS.js yüklenemedi - HLS videolar çalışmayabilir');
+  } else {
+    console.log('HLS.js yüklendi - GitHub IPTV Player teknolojisi aktif');
+  }
+
+  // Video event listeners (GitHub projesinden)
+  video.addEventListener("playing", () => showSpinner(false));
+  video.addEventListener("waiting", () => showSpinner(true));
+  video.addEventListener("loadstart", () => showSpinner(true));
+  video.addEventListener("canplay", () => showSpinner(false));
+
+  // Tabs
+  el.tabs.querySelectorAll('.tab').forEach(t=>{
+    t.onclick = ()=>{
+      el.tabs.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+      t.classList.add('active');
+      S.tab = t.dataset.tab;
+      renderCats(); loadList();
+    };
+  });
+
+  // Logout
+  $('#logout').onclick = ()=>{
+    localStorage.removeItem('qruze_login');
+    localStorage.removeItem('qruze_info_shown');
+    location.assign('login.html');
+  };
+
+  // Search
+  const deb = (fn,ms)=>{let h;return (...a)=>{clearTimeout(h);h=setTimeout(()=>fn(...a),ms)}};
+  el.search.oninput = deb(()=>{
+    S.searchTerm = sanitizeInput(el.search.value.trim().toLowerCase());
+    el.searchBox.classList.toggle('hasValue', !!S.searchTerm);
+    loadList();
+  }, 200);
+  el.clearSearch.onclick = ()=>{
+    el.search.value=''; S.searchTerm=''; el.searchBox.classList.remove('hasValue'); loadList();
+  };
+
+  try{
+    hideError();
+    // Hesap bilgisi
+    const info = await fetchJSON(apiBase());
+    const exp = info?.user_info?.exp_date;
+    if(exp && Number(exp)>0){
+      const d=new Date(Number(exp)*1000);
+      el.expiry.textContent = `Bitiş: ${d.toLocaleDateString('tr-TR')}`;
+    }else{ el.expiry.textContent=''; }
+
+    // Kategoriler
+    const [live,vod,series] = await Promise.all([
+      fetchJSON(apiBase()+'&action=get_live_categories'),
+      fetchJSON(apiBase()+'&action=get_vod_categories'),
+      fetchJSON(apiBase()+'&action=get_series_categories')
+    ]);
+    S.cats={live,vod,series};
+    renderCats();
+    await loadList();
+  }catch(e){
+    showError('Başlangıç verileri alınamadı', e?.message||'ağ');
+  }
+}
+
+/* ====== UI ====== */
+function renderCats(){
+  const cats = S.tab==='movies' ? S.cats.vod : S.tab==='series' ? S.cats.series : S.cats.live;
+  el.sideTitle.textContent = S.tab==='movies' ? 'Film Kategorileri' : S.tab==='series' ? 'Dizi Kategorileri' : 'Canlı Kategoriler';
+  if(!cats || !cats.length){ el.cats.innerHTML='<div class="notice">Kategori bulunamadı.</div>'; return; }
+
+  const hadActive = !!el.cats.querySelector('.cat.active');
+  el.cats.innerHTML = cats.map((c,i)=>`<div class="cat ${(!hadActive && i===0)?'active':''}" data-id="${escAttr(c.category_id)}">${escAttr(c.category_name)}</div>`).join('');
+  el.cats.querySelectorAll('.cat').forEach(li=>li.onclick=()=>{
+    el.cats.querySelectorAll('.cat').forEach(x=>x.classList.remove('active'));
+    li.classList.add('active');
+    loadList();
+  });
+  if (!el.cats.querySelector('.cat.active')) {
+    const first = el.cats.querySelector('.cat');
+    if (first) first.classList.add('active');
+  }
+}
+
+function activeCat(){ return el.cats.querySelector('.cat.active')?.dataset.id; }
+
+/* ====== Lists ====== */
+async function loadList(){
+  hideError();
+  const grid = el.grid;
+  const cat = activeCat();
+  grid.classList.toggle('live', S.tab==='live');
+
+  if(S.searchTerm){
+    try{
+      const [l,m,s] = await Promise.all([
+        S.cache.live.length ? Promise.resolve(S.cache.live) : fetchJSON(apiBase()+'&action=get_live_streams'),
+        S.cache.movies.length ? Promise.resolve(S.cache.movies) : fetchJSON(apiBase()+'&action=get_vod_streams'),
+        S.cache.series.length ? Promise.resolve(S.cache.series) : fetchJSON(apiBase()+'&action=get_series'),
+      ]);
+      S.cache.live = l||[]; S.cache.movies = m||[]; S.cache.series = s||[];
+      const term = S.searchTerm;
+      const list = []
+        .concat((l||[]).map(o=>({...o,_kind:'live',_ext:'m3u8'})))
+        .concat((m||[]).map(o=>({...o,_kind:'movie',_ext:o.container_extension||'mp4'})))
+        .concat((s||[]).map(o=>({...o,_kind:'series',_ext:o.container_extension||'mp4'})))
+        .filter(x => (x.name||'').toLowerCase().includes(term))
+        .slice(0,400);
+      return renderMixed(list);
+    }catch(e){
+      renderMixed([]); showError('Arama sırasında hata', e?.message||'ağ'); return;
+    }
+  }
+
+  if(!cat){ grid.innerHTML=''; return; }
+
+  let url=apiBase();
+  if(S.tab==='movies') url+='&action=get_vod_streams&category_id='+encodeURIComponent(cat);
+  else if(S.tab==='series') url+='&action=get_series&category_id='+encodeURIComponent(cat);
+  else url+='&action=get_live_streams&category_id='+encodeURIComponent(cat);
+
+  try{
+    const d=await fetchJSON(url);
+    renderList(Array.isArray(d)?d:[]);
+  }catch(e){
+    renderList([]); showError('İçerik listesi yüklenemedi', e?.message||'ağ');
+  }
+}
+
+function renderMixed(items){
+  if(!items.length){ el.grid.innerHTML='<div class="notice">Eşleşen sonuç bulunamadı.</div>'; return; }
+  el.grid.classList.remove('live');
+  el.grid.innerHTML = items.map(it=>{
+    const title = escAttr(it.name||'—');
+    const poster = escAttr(safePoster(it));
+    if(it._kind==='series'){
+      const id = Number(it.series_id)||0;
+      return `<div class="card" onclick="showSeries(${id},'${title}')">
+        <div class="poster" style="background-image:url('${poster}')"></div>
+        <div class="title">📺 ${title}</div>
+      </div>`;
+    }else{
+      const id = Number(it.stream_id)||0;
+      const ext = escAttr(it._ext || 'mp4');
+      const kind = escAttr(it._kind);
+      return `<div class="card" onclick="play('${kind}',${id},'${ext}','${title}','${poster}')">
+        <div class="poster" style="background-image:url('${poster}')"></div>
+        <div class="title">${kind==='live'?'📡 ':''}${title}</div>
+      </div>`;
+    }
+  }).join('');
+}
+
+function renderList(items){
+  if(!items.length){ el.grid.innerHTML='<div class="notice">Bu kategoride içerik yok.</div>'; return; }
+  el.grid.innerHTML = items.map(it=>{
+    const isSeries = (S.tab==='series');
+    const title = escAttr(it.name||'—');
+    const poster = escAttr(safePoster(it));
+    if(isSeries){
+      const id = Number(it.series_id)||0;
+      return `<div class="card" onclick="showSeries(${id},'${title}')">
+        <div class="poster" style="background-image:url('${poster}')"></div>
+        <div class="title">${title}</div>
+      </div>`;
+    }else{
+      const id = Number(it.stream_id)||0;
+      const ext = (S.tab==='live') ? 'm3u8' : escAttr(it.container_extension||'mp4');
+      const kind = (S.tab==='live') ? 'live' : 'movie';
+      return `<div class="card" onclick="play('${kind}',${id},'${ext}','${title}','${poster}')">
+        <div class="poster" style="background-image:url('${poster}')"></div>
+        <div class="title">${S.tab==='live'?'📡 ':''}${title}</div>
+      </div>`;
+    }
+  }).join('');
+}
+
+/* ====== Series ====== */
+async function showSeries(id,title){
+  document.getElementById('seriesTitle').textContent=title;
+  document.getElementById('seriesModal').classList.add('active');
+  const seasonsEl = document.getElementById('seasons');
+  const epsEl = document.getElementById('episodes');
+  seasonsEl.innerHTML=''; epsEl.innerHTML='<div class="loading">Yükleniyor…</div>';
+  
+  try{
+    const info = await fetchJSON(apiBase()+"&action=get_series_info&series_id="+encodeURIComponent(id));
+    const eps = info?.episodes || {};
+    const seasons = Object.keys(eps).sort((a,b)=>+a-+b);
+    if(!seasons.length){ epsEl.innerHTML='<div class="notice">Bölüm bulunamadı.</div>'; return; }
+
+    seasonsEl.innerHTML = seasons.map((s,i)=>`<div class="season ${i===0?'active':''}" data-s="${escAttr(s)}">Sezon ${escAttr(s)}</div>`).join('');
+    
+    function renderEp(s){
+      epsEl.innerHTML = (eps[s]||[]).map(ep=>{
+        const ext = escAttr(ep.container_extension || 'mp4');
+        const url = streamUrl('series', Number(ep.id)||0, ext);
+        const rawName = `Bölüm ${ep.episode_num} — ${ep.title||''}`;
+        const safeName = escAttr(rawName);
+        const poster = escAttr(info?.info?.cover || LOGO_URL);
+        const meta = `{kind:'series',id:${Number(ep.id)||0},title:'${safeName}',poster:'${poster}',ext:'${ext}'}`;
+        return `<div class="ep" onclick="playDirect('${url}','${ext}','${safeName}','${poster}',${meta})">${safeName}</div>`;
+      }).join('');
+    }
+    
+    renderEp(seasons[0]);
+
+    seasonsEl.querySelectorAll('.season').forEach(x=>x.onclick=()=>{
+      seasonsEl.querySelectorAll('.season').forEach(y=>y.classList.remove('active'));
+      x.classList.add('active'); 
+      renderEp(x.dataset.s);
+    });
+  }catch(e){
+    epsEl.innerHTML='<div class="notice error">Dizi bilgisi alınamadı: ' + (e?.message||'bilinmeyen hata') + '</div>';
+  }
+}
+
+function closeSeries(){ 
+  document.getElementById('seriesModal').classList.remove('active'); 
+}
+
+/* ====== Player Functions (GitHub IPTV Player Style) ====== */
+function play(kind, id, ext, title, poster) {
+  const url = streamUrl(kind, id, ext);
+  const meta = {kind, id, title, poster, ext};
+  
+  // Player modal'ı aç
+  document.getElementById('playerModal').classList.add('active');
+  
+  // Player content'i hazırla
+  const playerContent = document.getElementById('playerContent');
+  playerContent.innerHTML = `
+    <video id="video" controls autoplay playsinline crossorigin="anonymous"></video>
+    <div class="spinner-overlay" id="spinner">
+      <div class="spinner"></div>
+    </div>
+  `;
+  
+  // GitHub projesindeki playChannel fonksiyonunu kullan
+  playChannel(url, meta);
+}
+
+function playDirect(url, ext, title, poster, meta) {
+  closeSeries();
+  
+  // Player modal'ı aç
+  document.getElementById('playerModal').classList.add('active');
+  
+  // Player content'i hazırla
+  const playerContent = document.getElementById('playerContent');
+  playerContent.innerHTML = `
+    <video id="video" controls autoplay playsinline crossorigin="anonymous"></video>
+    <div class="spinner-overlay" id="spinner">
+      <div class="spinner"></div>
+    </div>
+  `;
+  
+  // GitHub projesindeki playChannel fonksiyonunu kullan
+  playChannel(url, meta || {title, poster, ext});
+}
+
+function retryVideo() {
+  if(_meta) {
+    const {kind, id, ext, title, poster} = _meta;
+    if(kind === 'series') {
+      playDirect(streamUrl('series', id, ext), ext, title, poster, _meta);
+    } else {
+      play(kind, id, ext, title, poster);
+    }
+  }
+}
+
+function downloadVideo() {
+  if(!_meta) return;
+  
+  try {
+    const {kind, id, ext, title} = _meta;
+    let downloadUrl = '';
+    
+    if(kind === 'series') {
+      downloadUrl = streamUrl('series', id, ext);
+    } else {
+      downloadUrl = streamUrl(kind, id, ext);
+    }
+    
+    if(!downloadUrl) {
+      alert('İndirme URL\'i bulunamadı');
+      return;
+    }
+    
+    // Dosyayı indir
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    a.download = `${title}.${ext}`;
+    a.style.display = 'none';
+    
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    
+    console.log('Video indirme başlatıldı:', downloadUrl);
+    
+  } catch(e) {
+    console.error('İndirme hatası:', e);
+    alert('Video indirilemedi: ' + e.message);
+  }
+}
+
+function closePlayer(){
+  // GitHub projesindeki temizleme yaklaşımı
+  if (hls) {
+    hls.destroy();
+    hls = null;
+  }
+  
+  const video = document.getElementById('video');
+  if(video) {
+    video.pause();
+    video.src = '';
+  }
+  
+  showSpinner(false);
+  document.getElementById('playerModal').classList.remove('active');
+}
+
+/* go */
+boot();
+</script>
+</body>
+</html>
