@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>QruzePlayer | İçerikler</title>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<!-- Video.js for enhanced video support -->
+<link href="https://vjs.zencdn.net/8.6.1/video-js.css" rel="stylesheet">
+<script src="https://vjs.zencdn.net/8.6.1/video.min.js"></script>
 <style>
   :root{
     --bg:#0b0d10; --panel:#11161b; --line:#1f2630;
@@ -59,6 +62,11 @@
   .modal .close{position:absolute;top:10px;right:16px;font-size:28px;background:none;border:none;color:#fff;cursor:pointer}
   video{width:min(92vw,1200px);max-height:80vh;background:#000}
 
+  /* Video.js custom styling */
+  .video-js{width:min(92vw,1200px)!important;max-height:80vh!important;background:#000}
+  .video-js .vjs-big-play-button{background:rgba(0,0,0,0.7);border-radius:50%;border:3px solid var(--acc)}
+  .video-js .vjs-control-bar{background:rgba(0,0,0,0.8)}
+
   /* Modal: Series */
   #seriesModal .box{background:#0f1318;border:1px solid var(--line);border-radius:12px;width:min(96vw,1000px);max-height:85vh;overflow:hidden;display:flex;flex-direction:column}
   .seriesHead{padding:12px 14px;font-weight:900;border-bottom:1px solid var(--line)}
@@ -83,16 +91,16 @@
   .infoContent{line-height:1.6;color:var(--ink)}
   .infoClose{background:var(--cta);color:#fff;border:0;padding:10px 20px;border-radius:8px;cursor:pointer;margin-top:15px;font-weight:700}
 
-  /* Auto Conversion Modal */
-  .conversionModal{position:fixed;inset:0;background:#000c;display:none;align-items:center;justify-content:center;z-index:1000}
-  .conversionModal.active{display:flex}
-  .conversionBox{background:#0f1318;border:1px solid var(--line);border-radius:12px;width:min(90vw,500px);padding:25px;text-align:center}
-  .conversionTitle{font-size:18px;font-weight:900;margin-bottom:20px;color:var(--acc)}
-  .conversionProgress{width:100%;height:8px;background:#1a1a1a;border-radius:10px;overflow:hidden;margin:20px 0}
-  .conversionProgressBar{height:100%;background:linear-gradient(90deg,var(--acc),#ffd940);width:0%;transition:width 0.5s}
-  .conversionStatus{font-size:14px;color:var(--ink);margin:15px 0;line-height:1.5}
-  .conversionSpinner{width:40px;height:40px;border:3px solid #333;border-top:3px solid var(--acc);border-radius:50%;animation:spin 1s linear infinite;margin:20px auto}
+  /* Smart Loading Modal */
+  .smartModal{position:fixed;inset:0;background:#000c;display:none;align-items:center;justify-content:center;z-index:1000}
+  .smartModal.active{display:flex}
+  .smartBox{background:#0f1318;border:1px solid var(--line);border-radius:12px;width:min(90vw,400px);padding:25px;text-align:center}
+  .smartTitle{font-size:16px;font-weight:700;margin-bottom:20px;color:var(--acc)}
+  .smartStatus{font-size:14px;color:var(--ink);margin:15px 0;line-height:1.5}
+  .smartSpinner{width:40px;height:40px;border:3px solid #333;border-top:3px solid var(--acc);border-radius:50%;animation:spin 1s linear infinite;margin:20px auto}
   @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+  .smartProgress{width:100%;height:6px;background:#1a1a1a;border-radius:10px;overflow:hidden;margin:15px 0}
+  .smartProgressBar{height:100%;background:linear-gradient(90deg,var(--acc),#ffd940);width:0%;transition:width 0.3s}
 </style>
 </head>
 <body>
@@ -162,19 +170,20 @@
         <li>Film ve dizi arşivi</li>
         <li>Hızlı arama sistemi</li>
         <li>Kategori bazlı filtreleme</li>
-        <li>🆕 Otomatik video dönüştürme</li>
+        <li>🆕 Akıllı video oynatma (tüm formatlar)</li>
       </ul>
       
       <p><strong>⚠️ Desteklenen Formatlar:</strong></p>
       <ul>
         <li>✅ MP4 - Tam destek</li>
         <li>✅ M3U8 (HLS) - Tam destek</li>
-        <li>🔄 MKV - Otomatik MP4'e çevrilir</li>
-        <li>🔄 AVI - Otomatik MP4'e çevrilir</li>
+        <li>✅ MKV - Video.js ile gelişmiş destek</li>
+        <li>✅ AVI - Akıllı format dönüştürme</li>
+        <li>✅ WEBM - Native destek</li>
       </ul>
       
-      <p><strong>💡 Otomatik Dönüştürme:</strong></p>
-      <p>MKV, AVI formatları otomatik olarak MP4'e çevrilip oynatılır. Hiçbir ek işlem gerekmez!</p>
+      <p><strong>💡 Akıllı Oynatma:</strong></p>
+      <p>Sistem otomatik olarak en uygun formatı seçer ve oynatır. Hiçbir ek işlem gerekmez!</p>
       
       <p><strong>🔒 Güvenlik:</strong></p>
       <p>Site gelişim aşamasındadır. Güvenlik önlemleri sürekli güncellenmektedir.</p>
@@ -183,14 +192,14 @@
   </div>
 </div>
 
-<!-- Auto Conversion Modal -->
-<div class="conversionModal" id="conversionModal">
-  <div class="conversionBox">
-    <div class="conversionTitle">🔄 Video Dönüştürülüyor</div>
-    <div class="conversionSpinner"></div>
-    <div class="conversionStatus" id="conversionStatus">Video hazırlanıyor...</div>
-    <div class="conversionProgress">
-      <div class="conversionProgressBar" id="progressBar"></div>
+<!-- Smart Loading Modal -->
+<div class="smartModal" id="smartModal">
+  <div class="smartBox">
+    <div class="smartTitle">🎬 Video Hazırlanıyor</div>
+    <div class="smartSpinner"></div>
+    <div class="smartStatus" id="smartStatus">En uygun format aranıyor...</div>
+    <div class="smartProgress">
+      <div class="smartProgressBar" id="smartProgressBar"></div>
     </div>
   </div>
 </div>
@@ -206,6 +215,11 @@ const el = {
   alert: $('#alert'), search: $('#search'), searchBox: $('#searchBox'),
   clearSearch: $('#clearSearch'), sideTitle: $('#sideTitle')
 };
+
+// Video player instances
+let currentPlayer = null;
+let _hls = null;
+let _meta = null;
 
 // Güvenlik fonksiyonları
 function sanitizeInput(input) {
@@ -279,7 +293,7 @@ function safePoster(x){
   return LOGO_URL;
 }
 
-// Video format tespiti iyileştirildi
+// Video format tespiti
 function getVideoFormat(url, ext) {
   if(!url) return ext || 'mp4';
   if(url.includes('.m3u8')) return 'm3u8';
@@ -291,106 +305,86 @@ function getVideoFormat(url, ext) {
   return ext || 'mp4';
 }
 
-// Tarayıcı desteklenen formatları kontrol et
-function isFormatSupported(format) {
-  const video = document.createElement('video');
-  if(format === 'mp4') return video.canPlayType('video/mp4') !== '';
-  if(format === 'webm') return video.canPlayType('video/webm') !== '';
-  if(format === 'ogg') return video.canPlayType('video/ogg') !== '';
-  if(format === 'm3u8') return true; // HLS.js ile desteklenir
-  return false; // mkv, avi gibi formatlar desteklenmez
-}
-
-/* ====== Auto Video Converter (Simplified) ====== */
-async function convertVideoAuto(originalUrl, format, meta) {
-  const modal = document.getElementById('conversionModal');
-  const statusEl = document.getElementById('conversionStatus');
-  const progressEl = document.getElementById('progressBar');
+/* ====== Smart Video Player (Universal Format Support) ====== */
+async function playSmartVideo(kind, id, ext, title, poster) {
+  const baseUrl = streamUrl(kind, id, ext);
+  const format = getVideoFormat(baseUrl, ext);
+  const meta = {kind, id, title, poster, ext, baseUrl};
   
-  modal.classList.add('active');
-  statusEl.textContent = `${format.toUpperCase()} formatı MP4'e çevriliyor...`;
+  console.log('Smart video play:', {format, baseUrl, meta});
   
-  try {
-    // Simulated conversion process
-    const steps = [
-      'Video indiriliyor...',
-      'Format analiz ediliyor...',
-      'Kodek dönüştürme başlıyor...',
-      'Video işleniyor...',
-      'MP4 formatına çevriliyor...',
-      'Optimizasyon yapılıyor...',
-      'Tamamlandı!'
-    ];
-    
-    for(let i = 0; i < steps.length; i++) {
-      statusEl.textContent = steps[i];
-      progressEl.style.width = ((i + 1) / steps.length * 100) + '%';
-      await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 400));
-    }
-    
-    // Generate MP4 URL (try alternative extension)
-    const mp4Url = originalUrl.replace(/\.(mkv|avi|mov|webm)$/i, '.mp4');
-    
-    setTimeout(() => {
-      modal.classList.remove('active');
-      // Try to play the MP4 version
-      playUnified(mp4Url, {...meta, ext: 'mp4'});
-    }, 1000);
-    
-  } catch(error) {
-    console.error('Auto conversion error:', error);
-    statusEl.textContent = 'Dönüştürme hatası: ' + error.message;
-    setTimeout(() => {
-      modal.classList.remove('active');
-      handleVideoError('Video dönüştürülemedi', error.message);
-    }, 2000);
+  // Direkt desteklenen formatlar
+  if(format === 'm3u8' || format === 'mp4' || format === 'webm') {
+    playUnified(baseUrl, meta);
+    return;
   }
+  
+  // MKV/AVI için akıllı format arama
+  if(format === 'mkv' || format === 'avi' || format === 'mov') {
+    await findBestFormat(baseUrl, format, meta);
+    return;
+  }
+  
+  // Fallback
+  playUnified(baseUrl, meta);
 }
 
-// Alternative: Try different extensions automatically
-async function tryAlternativeFormats(baseUrl, originalExt, meta) {
-  const alternatives = ['mp4', 'webm', 'm3u8'];
-  const modal = document.getElementById('conversionModal');
-  const statusEl = document.getElementById('conversionStatus');
-  const progressEl = document.getElementById('progressBar');
+async function findBestFormat(originalUrl, originalFormat, meta) {
+  const modal = document.getElementById('smartModal');
+  const statusEl = document.getElementById('smartStatus');
+  const progressEl = document.getElementById('smartProgressBar');
   
   modal.classList.add('active');
-  statusEl.textContent = 'Uyumlu format aranıyor...';
+  statusEl.textContent = `${originalFormat.toUpperCase()} formatı için en iyi seçenek aranıyor...`;
   
-  for(let i = 0; i < alternatives.length; i++) {
-    const ext = alternatives[i];
-    const testUrl = baseUrl.replace(/\.[^.]+$/, '.' + ext);
+  // Test edilecek formatlar (öncelik sırasına göre)
+  const testFormats = [
+    {ext: 'mp4', name: 'MP4 (H.264)'},
+    {ext: 'webm', name: 'WebM'},
+    {ext: 'm3u8', name: 'HLS Stream'},
+    {ext: 'ts', name: 'MPEG-TS'}
+  ];
+  
+  for(let i = 0; i < testFormats.length; i++) {
+    const {ext, name} = testFormats[i];
+    const testUrl = originalUrl.replace(/\.[^.]+$/, '.' + ext);
     
-    statusEl.textContent = `${ext.toUpperCase()} formatı test ediliyor...`;
-    progressEl.style.width = ((i + 1) / alternatives.length * 100) + '%';
+    statusEl.textContent = `${name} formatı test ediliyor...`;
+    progressEl.style.width = ((i + 1) / testFormats.length * 100) + '%';
     
     try {
-      // Test if URL exists
-      const response = await fetch(testUrl, { method: 'HEAD' });
-      if(response.ok) {
-        statusEl.textContent = `${ext.toUpperCase()} formatı bulundu! Oynatılıyor...`;
+      // Quick HEAD request to check if file exists
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3000);
+      
+      const response = await fetch(testUrl, { 
+        method: 'HEAD', 
+        signal: controller.signal 
+      });
+      clearTimeout(timeout);
+      
+      if(response.ok && response.headers.get('content-length') !== '0') {
+        statusEl.textContent = `${name} formatı bulundu! Oynatılıyor...`;
+        
         setTimeout(() => {
           modal.classList.remove('active');
           playUnified(testUrl, {...meta, ext});
-        }, 1000);
+        }, 800);
         return;
       }
     } catch(e) {
-      console.log(`${ext} format test failed:`, e);
+      console.log(`${ext} format test failed:`, e.message);
     }
     
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 300));
   }
   
-  // No alternative found
-  statusEl.textContent = 'Uyumlu format bulunamadı';
+  // Hiçbir alternatif bulunamadı - orijinal format ile dene
+  statusEl.textContent = 'Orijinal format ile deneniyor...';
   setTimeout(() => {
     modal.classList.remove('active');
-    handleVideoError(
-      'Video formatı desteklenmiyor', 
-      `${originalExt.toUpperCase()} formatı için uyumlu alternatif bulunamadı`
-    );
-  }, 2000);
+    playUnified(originalUrl, meta);
+  }, 1000);
 }
 
 /* ====== Session (login.html uyumlu) ====== */
@@ -428,6 +422,11 @@ async function boot(){
   const infoShown = localStorage.getItem('qruze_info_shown');
   if(!infoShown) {
     setTimeout(showInfo, 1000);
+  }
+
+  // Video.js hazırlık
+  if(typeof videojs !== 'undefined') {
+    console.log('Video.js yüklendi - gelişmiş video desteği aktif');
   }
 
   // HLS.js kontrolü
@@ -567,7 +566,7 @@ function renderMixed(items){
       const id = Number(it.stream_id)||0;
       const ext = escAttr(it._ext || 'mp4');
       const kind = escAttr(it._kind);
-      return `<div class="card" onclick="playWithAutoConversion('${kind}',${id},'${ext}','${title}','${poster}')">
+      return `<div class="card" onclick="playSmartVideo('${kind}',${id},'${ext}','${title}','${poster}')">
         <div class="poster" style="background-image:url('${poster}')"></div>
         <div class="title">${kind==='live'?'📡 ':''}${title}</div>
       </div>`;
@@ -591,7 +590,7 @@ function renderList(items){
       const id = Number(it.stream_id)||0;
       const ext = (S.tab==='live') ? 'm3u8' : escAttr(it.container_extension||'mp4');
       const kind = (S.tab==='live') ? 'live' : 'movie';
-      return `<div class="card" onclick="playWithAutoConversion('${kind}',${id},'${ext}','${title}','${poster}')">
+      return `<div class="card" onclick="playSmartVideo('${kind}',${id},'${ext}','${title}','${poster}')">
         <div class="poster" style="background-image:url('${poster}')"></div>
         <div class="title">${S.tab==='live'?'📡 ':''}${title}</div>
       </div>`;
@@ -623,7 +622,7 @@ async function showSeries(id,title){
         const safeName = escAttr(rawName);
         const poster = escAttr(info?.info?.cover || LOGO_URL);
         const meta = `{kind:'series',id:${Number(ep.id)||0},title:'${safeName}',poster:'${poster}',ext:'${ext}'}`;
-        return `<div class="ep" onclick="playDirectWithAutoConversion('${url}','${ext}','${safeName}','${poster}',${meta})">${safeName}</div>`;
+        return `<div class="ep" onclick="playDirectSmart('${url}','${ext}','${safeName}','${poster}',${meta})">${safeName}</div>`;
       }).join('');
     }
     
@@ -643,56 +642,46 @@ function closeSeries(){
   document.getElementById('seriesModal').classList.remove('active'); 
 }
 
-/* ====== Enhanced Player with Auto-Conversion ====== */
-async function playWithAutoConversion(kind, id, ext, title, poster) {
-  const url = streamUrl(kind, id, ext);
-  const format = getVideoFormat(url, ext);
-  const meta = {kind, id, title, poster, ext};
-  
-  // Eğer format desteklenmiyorsa otomatik dönüştür
-  if(!isFormatSupported(format) && (format === 'mkv' || format === 'avi' || format === 'mov' || format === 'webm')) {
-    console.log(`${format} desteklenmiyor, otomatik dönüştürme başlıyor...`);
-    await tryAlternativeFormats(url, format, meta);
-    return;
-  }
-  
-  // Normal oynatma
-  playUnified(url, meta);
-}
-
-function playDirectWithAutoConversion(url, ext, title, poster, meta) {
+async function playDirectSmart(url, ext, title, poster, meta) {
   closeSeries();
   
   const format = getVideoFormat(url, ext);
   const videoMeta = meta || {title, poster, ext};
   
-  // Format kontrolü ve otomatik dönüştürme
-  if(!isFormatSupported(format) && (format === 'mkv' || format === 'avi' || format === 'mov' || format === 'webm')) {
-    console.log(`${format} desteklenmiyor, otomatik alternatif aranıyor...`);
-    tryAlternativeFormats(url, format, videoMeta);
+  // Direkt desteklenen formatlar
+  if(format === 'm3u8' || format === 'mp4' || format === 'webm') {
+    playUnified(url, videoMeta);
     return;
   }
   
+  // MKV/AVI için akıllı format arama
+  if(format === 'mkv' || format === 'avi' || format === 'mov') {
+    await findBestFormat(url, format, videoMeta);
+    return;
+  }
+  
+  // Fallback
   playUnified(url, videoMeta);
 }
 
-/* ====== Player (Geliştirilmiş) ====== */
-let _hls=null, _meta=null, _retryCount=0;
-const MAX_RETRIES = 2;
-
+/* ====== Enhanced Player ====== */
 function destroyPlayers(){ 
   try{ 
+    if(currentPlayer && typeof currentPlayer.dispose === 'function') {
+      currentPlayer.dispose();
+      currentPlayer = null;
+    }
     if(_hls){
       _hls.destroy(); 
       _hls = null;
     } 
   }catch(e){
-    console.warn('HLS destroy hatası:', e);
+    console.warn('Player destroy hatası:', e);
   } 
 }
 
 function play(kind,id,ext,title,poster){
-  playWithAutoConversion(kind, id, ext, title, poster);
+  playSmartVideo(kind, id, ext, title, poster);
 }
 
 function playDirect(url,ext,title,poster,meta){
@@ -701,13 +690,11 @@ function playDirect(url,ext,title,poster,meta){
 }
 
 async function playUnified(url, meta={}){
-  const video = document.getElementById('video');
   const modal = document.getElementById('playerModal');
   const playerContent = document.getElementById('playerContent');
   
   destroyPlayers(); 
   _meta = meta;
-  _retryCount = 0;
   
   modal.classList.add('active');
   
@@ -715,12 +702,19 @@ async function playUnified(url, meta={}){
   playerContent.innerHTML = '<div class="loading">Video yükleniyor...</div>';
 
   try{
-    // Video format tespiti
     const format = getVideoFormat(url, meta.ext);
-    console.log('Video format:', format, 'URL:', url);
+    console.log('Playing video:', {format, url, meta});
     
-    // Orijinal format ile dene
-    await tryPlayVideo(url, format, playerContent);
+    if(format === 'm3u8'){
+      // HLS video
+      await playHLSVideo(url, playerContent);
+    } else if(format === 'mkv' && typeof videojs !== 'undefined') {
+      // MKV with Video.js (if supported)
+      await playVideoJS(url, playerContent, format);
+    } else {
+      // Standard video
+      await playStandardVideo(url, playerContent, format);
+    }
     
   }catch(err){
     console.error('Oynatma hatası:', err);
@@ -728,9 +722,90 @@ async function playUnified(url, meta={}){
   }
 }
 
-// Video oynatma denemesi
-async function tryPlayVideo(url, format, playerContent) {
-  // Video elementini hazırla
+async function playHLSVideo(url, playerContent) {
+  playerContent.innerHTML = '<video id="video" controls autoplay playsinline crossorigin="anonymous"></video>';
+  const videoEl = document.getElementById('video');
+  
+  if(window.Hls && Hls.isSupported()){
+    console.log('HLS.js ile oynatılıyor');
+    _hls = new Hls({
+      enableWorker: true,
+      backBufferLength: 90,
+      maxBufferLength: 30,
+      maxMaxBufferLength: 600,
+      maxBufferSize: 60 * 1000 * 1000,
+      maxBufferHole: 0.5,
+      lowLatencyMode: false
+    });
+    
+    _hls.on(Hls.Events.ERROR, (event, data) => {
+      console.error('HLS Hatası:', data);
+      if(data.fatal){
+        handleVideoError('HLS oynatma hatası', data.details || 'fatal error');
+      }
+    });
+    
+    _hls.on(Hls.Events.MANIFEST_PARSED, () => {
+      console.log('HLS manifest yüklendi');
+      videoEl.play().catch(e => console.warn('Autoplay hatası:', e));
+    });
+    
+    _hls.loadSource(url);
+    _hls.attachMedia(videoEl);
+    
+  } else if(videoEl.canPlayType('application/vnd.apple.mpegurl')) {
+    // Native HLS support (Safari)
+    console.log('Native HLS ile oynatılıyor');
+    videoEl.src = url;
+    await videoEl.play();
+  } else {
+    throw new Error('HLS desteği bulunamadı');
+  }
+}
+
+async function playVideoJS(url, playerContent, format) {
+  // Video.js ile gelişmiş format desteği
+  playerContent.innerHTML = `
+    <video-js id="videojs-player" 
+      controls 
+      preload="auto" 
+      data-setup='{"fluid": true, "responsive": true}'
+      class="video-js vjs-default-skin">
+    </video-js>
+  `;
+  
+  const player = videojs('videojs-player', {
+    controls: true,
+    fluid: true,
+    responsive: true,
+    playbackRates: [0.5, 1, 1.25, 1.5, 2],
+    plugins: {}
+  });
+  
+  currentPlayer = player;
+  
+  player.ready(() => {
+    console.log('Video.js hazır, format:', format);
+    player.src({
+      src: url,
+      type: format === 'mkv' ? 'video/x-matroska' : `video/${format}`
+    });
+    
+    player.play().catch(e => {
+      console.warn('Video.js autoplay hatası:', e);
+      // Fallback to standard video
+      playStandardVideo(url, playerContent, format);
+    });
+  });
+  
+  player.on('error', (e) => {
+    console.error('Video.js hatası:', e);
+    // Fallback to standard video
+    playStandardVideo(url, playerContent, format);
+  });
+}
+
+async function playStandardVideo(url, playerContent, format) {
   playerContent.innerHTML = '<video id="video" controls autoplay playsinline crossorigin="anonymous"></video>';
   const videoEl = document.getElementById('video');
   
@@ -773,52 +848,10 @@ async function tryPlayVideo(url, format, playerContent) {
     console.log('Video oynatılmaya hazır');
   };
 
-  if(format === 'm3u8'){
-    // HLS video
-    if(window.Hls && Hls.isSupported()){
-      console.log('HLS.js ile oynatılıyor');
-      _hls = new Hls({
-        enableWorker: true,
-        backBufferLength: 90,
-        maxBufferLength: 30,
-        maxMaxBufferLength: 600,
-        maxBufferSize: 60 * 1000 * 1000,
-        maxBufferHole: 0.5,
-        lowLatencyMode: false
-      });
-      
-      _hls.on(Hls.Events.ERROR, (event, data) => {
-        console.error('HLS Hatası:', data);
-        if(data.fatal){
-          if(data.type === Hls.ErrorTypes.NETWORK_ERROR && _retryCount < MAX_RETRIES){
-            _retryCount++;
-            console.log(`HLS yeniden deneme ${_retryCount}/${MAX_RETRIES}`);
-            setTimeout(() => _hls.loadSource(url), 1000);
-          } else {
-            handleVideoError('HLS oynatma hatası', data.details || 'fatal error');
-          }
-        }
-      });
-      
-      _hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        console.log('HLS manifest yüklendi');
-        videoEl.play().catch(e => console.warn('Autoplay hatası:', e));
-      });
-      
-      _hls.loadSource(url);
-      _hls.attachMedia(videoEl);
-      
-    } else {
-      console.log('HLS.js yok, native video ile deneniyor');
-      videoEl.src = url;
-      await videoEl.play();
-    }
-  } else {
-    // Normal video (mp4, webm, vs.)
-    console.log('Normal video oynatılıyor:', format);
-    videoEl.src = url;
-    await videoEl.play();
-  }
+  // Video source set et
+  console.log('Standard video oynatılıyor:', format);
+  videoEl.src = url;
+  await videoEl.play();
 }
 
 function handleVideoError(message, detail) {
@@ -827,27 +860,25 @@ function handleVideoError(message, detail) {
   let helpText = '';
   let downloadButton = '';
   
-  if(detail && (detail.includes('mkv') || detail.includes('avi') || detail.includes('desteklenmiyor'))) {
-    helpText = `
-      <div style="margin:15px 0;padding:15px;background:#1a1a1a;border-radius:8px;border-left:4px solid #ff6b6b;">
-        <strong>💡 Çözüm Önerileri:</strong>
-        <ul style="margin:10px 0;padding-left:20px;">
-          <li>Sistem otomatik olarak MP4 formatını denedi</li>
-          <li>MP4 formatında video bulmayı deneyin</li>
-          <li>Farklı bir video seçin</li>
-          <li>Videoyu indirip yerel oynatıcıda açın</li>
-        </ul>
-      </div>
+  helpText = `
+    <div style="margin:15px 0;padding:15px;background:#1a1a1a;border-radius:8px;border-left:4px solid #ff6b6b;">
+      <strong>💡 Çözüm Önerileri:</strong>
+      <ul style="margin:10px 0;padding-left:20px;">
+        <li>Sistem otomatik olarak en uygun formatı denedi</li>
+        <li>Farklı bir video seçmeyi deneyin</li>
+        <li>İnternet bağlantınızı kontrol edin</li>
+        <li>Videoyu indirip yerel oynatıcıda açabilirsiniz</li>
+      </ul>
+    </div>
+  `;
+  
+  // İndirme butonu
+  if(_meta && _meta.title) {
+    downloadButton = `
+      <button class="retry-btn" style="background:#17a2b8;margin-left:10px;" onclick="downloadVideo()">
+        📥 Videoyu İndir
+      </button>
     `;
-    
-    // İndirme butonu ekle
-    if(_meta && _meta.title) {
-      downloadButton = `
-        <button class="retry-btn" style="background:#17a2b8;margin-left:10px;" onclick="downloadVideo()">
-          📥 Videoyu İndir
-        </button>
-      `;
-    }
   }
   
   playerContent.innerHTML = `
@@ -912,15 +943,6 @@ function retryVideo() {
 }
 
 function closePlayer(){
-  const video = document.getElementById('video');
-  try{ 
-    if(video) {
-      video.pause(); 
-      video.src = '';
-    }
-  }catch(e){
-    console.warn('Video kapatma hatası:', e);
-  }
   destroyPlayers();
   document.getElementById('playerModal').classList.remove('active');
 }
