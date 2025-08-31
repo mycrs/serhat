@@ -68,9 +68,9 @@
   <h4>⚠️ Site Gelişim Aşamasında</h4>
   <ul>
     <li><strong>Canlı yayın:</strong> Sıkıntısız çalışır</li>
-    <li><strong>MKV içerikler:</strong> Şu anda desteklenmiyor</li>
-    <li><strong>Proxy:</strong> Uyumlu olması gerekiyor</li>
-    <li><strong>Dizi bölümleri:</strong> Yakında eklenecek</li>
+    <li><strong>MKV içerikler:</strong> Proxy ile desteklenir</li>
+    <li><strong>Proxy:</strong> Güvenli hostlar için aktif</li>
+    <li><strong>Dizi bölümleri:</strong> Tam çalışır durumda</li>
   </ul>
 </div>
 
@@ -114,14 +114,29 @@
 /* === Proxy ayarı === */
 const FORCE_PROXY_ALL = false; // true yaparsan tüm akışlar proxy'den geçer
 
+// Proxy.php ile uyumlu URL oluştur
 function proxify(u){
-  if (/\.(mkv|avi|wmv)(\?|$)/i.test(u)) {
-    return location.origin + '/proxy.php?u=' + encodeURIComponent(u);
+  try {
+    // Güvenlik: sadece izin verilen hostlardan proxy kullan
+    const allowedHosts = ['fcs3.xyz','fcs01.com','tontontv.xyz','vipeu1.site','8un93r.dynuddns.com','l550fo.dynuddns.com'];
+    const url = new URL(u);
+    const host = url.hostname;
+    
+    // İzin verilen hostlardan geliyorsa proxy kullan
+    if (allowedHosts.includes(host)) {
+      if (/\.(mkv|avi|wmv|mp4|m4v|ts)(\?|$)/i.test(u)) {
+        return location.origin + '/proxy.php?u=' + encodeURIComponent(u);
+      }
+    }
+    
+    if (FORCE_PROXY_ALL) {
+      return location.origin + '/proxy.php?u=' + encodeURIComponent(u);
+    }
+    return u;
+  } catch (error) {
+    console.warn('Proxy URL oluşturulamadı:', error);
+    return u; // Hata durumunda orijinal URL'i döndür
   }
-  if (FORCE_PROXY_ALL) {
-    return location.origin + '/proxy.php?u=' + encodeURIComponent(u);
-  }
-  return u;
 }
 
 /* === Global state === */

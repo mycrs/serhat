@@ -1,118 +1,68 @@
 <?php
-/**
- * QRUZE Player Proxy
- * MKV, AVI gibi tarayıcıda desteklenmeyen formatları proxy üzerinden çalıştırır
- */
+// proxy.php  — HTTPS üzerinden HTTP/HTTPS video akışını geçirir
+// Kullanım: https://SİTENİZ/proxy.php?u=http://host:8080/live/u/p/12345.mkv
 
-// CORS ayarları
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Expose-Headers: Content-Length, Content-Range");
+if (!isset($_GET['u'])) { http_response_code(400); echo "Missing url"; exit; }
 
-// OPTIONS request için
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    exit(0);
+$src = urldecode($_GET['u']);
+
+// Güvenlik: yalnızca belirli hostlara izin ver (isteğe göre genişlet)
+$allow = ['fcs3.xyz','fcs01.com','tontontv.xyz','vipeu1.site','8un93r.dynuddns.com','l550fo.dynuddns.com'];
+$host = parse_url($src, PHP_URL_HOST);
+if (!in_array($host, $allow)) { http_response_code(403); echo "Host not allowed"; exit; }
+
+$ch = curl_init($src);
+
+// İstemciden Range geldiyse ilet
+$headers = [];
+if (isset($_SERVER['HTTP_RANGE'])) $headers[] = 'Range: '.$_SERVER['HTTP_RANGE'];
+
+// User-Agent/Referer iletmek bazı panellerde gerekli
+$headers[] = 'User-Agent: '.($_SERVER['HTTP_USER_AGENT'] ?? 'Mozilla/5.0');
+if (!empty($_SERVER['HTTP_REFERER'])) $headers[] = 'Referer: '.$_SERVER['HTTP_REFERER'];
+
+curl_setopt_array($ch, [
+  CURLOPT_FOLLOWLOCATION => true,
+  CURLOPT_HEADER => true,
+  CURLOPT_RETURNTRANSFER => true,
+  CURLOPT_HTTPHEADER => $headers,
+  CURLOPT_SSL_VERIFYPEER => false,
+  CURLOPT_SSL_VERIFYHOST => 0,
+]);
+
+$resp = curl_exec($ch);
+if ($resp === false) { http_response_code(502); echo 'Proxy error'; exit; }
+
+$header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+$h = substr($resp, 0, $header_size);
+$body = substr($resp, $header_size);
+$code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+curl_close($ch);
+
+// Kaynak başlıklarından gerekli olanları geçir
+$pass = [
+  'Content-Type','Content-Length','Content-Range','Accept-Ranges',
+  'Content-Disposition','Cache-Control','Expires','Last-Modified'
+];
+
+foreach (explode("\r\n", $h) as $line) {
+  if (strpos($line, ':') !== false) {
+    [$k,$v] = explode(':', $line, 2);
+    $k = trim($k); $v = trim($v);
+    if (in_array($k, $pass)) header("$k: $v");
+  }
 }
 
-// URL parametresi kontrolü
-$url = $_GET['u'] ?? null;
-if (!$url) {
-    http_response_code(400);
-    echo 'URL parametresi gerekli';
-    exit;
+// Bazı .mkv/.mp4 yanıtları yanlış tip döndürürse düzelt
+if (!headers_sent() && !preg_match('~^video/|application/vnd.apple.mpegurl|application/x-mpegURL~i', $h)) {
+  if (preg_match('~\.m3u8($|\?)~i', $src)) header('Content-Type: application/vnd.apple.mpegurl');
+  elseif (preg_match('~\.(mp4|m4v)($|\?)~i', $src)) header('Content-Type: video/mp4');
+  elseif (preg_match('~\.mkv($|\?)~i', $src)) header('Content-Type: video/x-matroska');
 }
 
-// URL decode
-$url = urldecode($url);
-
-// Güvenlik kontrolü - sadece HTTP/HTTPS URL'lere izin ver
-if (!preg_match('/^https?:\/\//i', $url)) {
-    http_response_code(400);
-    echo 'Geçersiz URL formatı';
-    exit;
-}
-
-// Dosya uzantısı kontrolü
-$extension = strtolower(pathinfo($url, PATHINFO_EXTENSION));
-$allowedExtensions = ['mkv', 'avi', 'wmv', 'mp4', 'mov', 'flv'];
-
-if (!in_array($extension, $allowedExtensions)) {
-    http_response_code(400);
-    echo 'Desteklenmeyen dosya formatı';
-    exit;
-}
-
-try {
-    // Stream context oluştur
-    $context = stream_context_create([
-        'http' => [
-            'method' => 'GET',
-            'timeout' => 30,
-            'user_agent' => 'QRUZE-Player/1.0'
-        ]
-    ]);
-    
-    // Dosyayı aç
-    $file = fopen($url, 'rb', false, $context);
-    if (!$file) {
-        throw new Exception('Dosya açılamadı');
-    }
-    
-    // Content-Type belirle
-    $contentTypes = [
-        'mkv' => 'video/x-matroska',
-        'avi' => 'video/x-msvideo',
-        'wmv' => 'video/x-ms-wmv',
-        'mp4' => 'video/mp4',
-        'mov' => 'video/quicktime',
-        'flv' => 'video/x-flv'
-    ];
-    
-    $contentType = $contentTypes[$extension] ?? 'application/octet-stream';
-    header('Content-Type: ' . $contentType);
-    
-    // Range request desteği
-    $range = $_SERVER['HTTP_RANGE'] ?? null;
-    if ($range) {
-        // Range header'ı parse et
-        if (preg_match('/bytes=(\d+)-(\d*)/', $range, $matches)) {
-            $start = (int)$matches[1];
-            $end = $matches[2] ? (int)$matches[2] : null;
-            
-            // Dosya boyutunu al
-            $stats = stream_get_meta_data($file);
-            $filesize = $stats['size'] ?? 0;
-            
-            if ($end === null) {
-                $end = $filesize - 1;
-            }
-            
-            $length = $end - $start + 1;
-            
-            header('HTTP/1.1 206 Partial Content');
-            header('Accept-Ranges: bytes');
-            header("Content-Range: bytes $start-$end/$filesize");
-            header("Content-Length: $length");
-            
-            // Dosyayı belirtilen pozisyona taşı
-            fseek($file, $start);
-        }
-    }
-    
-    // Cache headers
-    header('Cache-Control: public, max-age=3600');
-    header('Expires: ' . gmdate('D, d M Y H:i:s \G\M\T', time() + 3600));
-    
-    // Dosyayı stream et
-    while (!feof($file)) {
-        echo fread($file, 8192); // 8KB chunks
-        flush();
-    }
-    
-    fclose($file);
-    
-} catch (Exception $e) {
-    http_response_code(500);
-    echo 'Proxy hatası: ' . $e->getMessage();
-}
+http_response_code($code);
+echo $body;
 ?>
