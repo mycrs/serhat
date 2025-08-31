@@ -8,10 +8,14 @@ if (!isset($_GET['u'])) { http_response_code(400); echo "Missing url"; exit; }
 
 $src = urldecode($_GET['u']);
 
-// Güvenlik: yalnızca belirli hostlara izin ver (isteğe göre genişlet)
-$allow = ['fcs3.xyz','fcs01.com','tontontv.xyz','vipeu1.site','8un93r.dynuddns.com','l550fo.dynuddns.com'];
+// Güvenlik: Tüm hostlara izin ver (geliştirme için)
+// $allow = ['fcs3.xyz','fcs01.com','tontontv.xyz','vipeu1.site','8un93r.dynuddns.com','l550fo.dynuddns.com'];
+// $host = parse_url($src, PHP_URL_HOST);
+// if (!in_array($host, $allow)) { http_response_code(403); echo "Host not allowed"; exit; }
+
+// Geliştirme modu: Tüm hostlara izin ver
 $host = parse_url($src, PHP_URL_HOST);
-if (!in_array($host, $allow)) { http_response_code(403); echo "Host not allowed"; exit; }
+if (!$host) { http_response_code(400); echo "Invalid host"; exit; }
 
 $ch = curl_init($src);
 

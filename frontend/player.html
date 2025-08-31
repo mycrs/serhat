@@ -69,7 +69,7 @@
   <ul>
     <li><strong>Canlı yayın:</strong> Sıkıntısız çalışır</li>
     <li><strong>MKV içerikler:</strong> Proxy ile desteklenir</li>
-    <li><strong>Proxy:</strong> Güvenli hostlar için aktif</li>
+    <li><strong>Proxy:</strong> Tüm hostlar için aktif (Geliştirme modu)</li>
     <li><strong>Dizi bölümleri:</strong> Tam çalışır durumda</li>
   </ul>
 </div>
@@ -114,19 +114,17 @@
 /* === Proxy ayarı === */
 const FORCE_PROXY_ALL = false; // true yaparsan tüm akışlar proxy'den geçer
 
-// Proxy.php ile uyumlu URL oluştur
+// Proxy.php ile uyumlu URL oluştur (Geliştirme modu)
 function proxify(u){
   try {
-    // Güvenlik: sadece izin verilen hostlardan proxy kullan
-    const allowedHosts = ['fcs3.xyz','fcs01.com','tontontv.xyz','vipeu1.site','8un93r.dynuddns.com','l550fo.dynuddns.com'];
+    // Geliştirme modu: Tüm hostlardan proxy kullan
+    // const allowedHosts = ['fcs3.xyz','fcs01.com','tontontv.xyz','vipeu1.site','8un93r.dynuddns.com','l550fo.dynuddns.com'];
     const url = new URL(u);
     const host = url.hostname;
     
-    // İzin verilen hostlardan geliyorsa proxy kullan
-    if (allowedHosts.includes(host)) {
-      if (/\.(mkv|avi|wmv|mp4|m4v|ts)(\?|$)/i.test(u)) {
-        return location.origin + '/proxy.php?u=' + encodeURIComponent(u);
-      }
+    // Tüm hostlar için proxy kullan (geliştirme için)
+    if (/\.(mkv|avi|wmv|mp4|m4v|ts)(\?|$)/i.test(u)) {
+      return location.origin + '/proxy.php?u=' + encodeURIComponent(u);
     }
     
     if (FORCE_PROXY_ALL) {
