@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>QruzePlayer</title>
+<style>
+  body{margin:0;font-family:sans-serif;background:#0e0e0e;color:#fff}
+  header{background:#111;padding:10px;display:flex;align-items:center;gap:20px}
+  .tabs .tab{cursor:pointer;margin-right:15px;padding:6px 12px;border-radius:6px;background:#222;display:inline-block}
+  .tabs .tab.active{background:#e63946}
+  .right{margin-left:auto;display:flex;align-items:center;gap:12px}
+  .btn{background:#e63946;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer}
+  .wrap{display:flex;height:calc(100vh - 50px)}
+  .side{width:220px;background:#181818;overflow:auto;padding:10px}
+  .main{flex:1;overflow:auto;padding:15px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:15px}
+  .card{background:#222;border-radius:8px;overflow:hidden;cursor:pointer}
+  .poster{width:100%;padding-top:140%;background:#000 center/cover no-repeat}
+  .title{padding:6px 8px;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .modal{position:fixed;inset:0;background:#000d;display:none;align-items:center;justify-content:center}
+  .modal.active{display:flex}
+  #playerBox{width:min(90vw,1000px)}
+  video{width:100%;max-height:80vh;background:#000}
+  
+  /* Uyarı mesajları için stil */
+  .warning{background:#ff6b35;color:#fff;padding:10px;margin:10px 0;border-radius:6px;font-size:12px}
+  .warning h4{margin:0 0 8px 0;font-size:14px}
+  .warning ul{margin:0;padding-left:20px}
+  .warning li{margin:3px 0}
+  
+  /* Dizi modal için stil */
+  .seriesModal{position:fixed;inset:0;background:#000d;display:none;align-items:center;justify-content:center;z-index:100}
+  .seriesModal.active{display:flex}
+  .seriesBox{width:min(90vw,800px);background:#222;border-radius:8px;padding:20px;max-height:80vh;overflow:auto}
+  .seriesHeader{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;border-bottom:1px solid #444;padding-bottom:10px}
+  .seriesBody{display:grid;grid-template-columns:200px 1fr;gap:20px}
+  .seasons{background:#181818;padding:10px;border-radius:6px}
+  .season{padding:8px;margin:5px 0;background:#333;border-radius:4px;cursor:pointer}
+  .season.active{background:#e63946}
+  .episodes{background:#181818;padding:10px;border-radius:6px}
+  .episode{padding:8px;margin:5px 0;background:#333;border-radius:4px;cursor:pointer}
+  .episode:hover{background:#444}
+  
+  /* Loading için stil */
+  .loading{position:fixed;inset:0;background:#000d;display:none;align-items:center;justify-content:center;z-index:200}
+  .loading.active{display:flex}
+  .spinner{width:40px;height:40px;border:4px solid #333;border-top-color:#e63946;border-radius:50%;animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="tabs">
+    <span class="tab active" data-tab="movies">Filmler</span>
+    <span class="tab" data-tab="series">Diziler</span>
+    <span class="tab" data-tab="live">Canlı</span>
+  </div>
+  <div class="right">
+    <span id="expiry"></span>
+    <button class="btn" onclick="logout()">Çıkış</button>
+  </div>
+</header>
+
+<!-- Uyarı mesajı -->
+<div class="warning">
+  <h4>⚠️ Site Gelişim Aşamasında</h4>
+  <ul>
+    <li><strong>Canlı yayın:</strong> Sıkıntısız çalışır</li>
+    <li><strong>MKV içerikler:</strong> Proxy ile desteklenir</li>
+    <li><strong>Proxy:</strong> Tüm hostlar için aktif (Geliştirme modu)</li>
+    <li><strong>Dizi bölümleri:</strong> Tam çalışır durumda</li>
+  </ul>
+</div>
+
+<div class="wrap">
+  <aside class="side">
+    <h4 id="sideTitle">Kategoriler</h4>
+    <ul id="cats"></ul>
+  </aside>
+  <main class="main"><div class="grid" id="grid"></div></main>
+</div>
+
+<!-- Player Modal -->
+<div class="modal" id="playerModal">
+  <div id="playerBox">
+    <video id="video" controls autoplay></video>
+  </div>
+</div>
+
+<!-- Dizi Modal -->
+<div class="seriesModal" id="seriesModal">
+  <div class="seriesBox">
+    <div class="seriesHeader">
+      <h3 id="seriesTitle">Dizi</h3>
+      <button class="btn" onclick="closeSeries()">Kapat</button>
+    </div>
+    <div class="seriesBody">
+      <div class="seasons" id="seasons"></div>
+      <div class="episodes" id="episodes"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Loading -->
+<div class="loading" id="loading">
+  <div class="spinner"></div>
+  <div style="margin-top:15px">Yükleniyor...</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<script>
+/* === Proxy ayarı === */
+const FORCE_PROXY_ALL = false; // true yaparsan tüm akışlar proxy'den geçer
+
+// Proxy.php ile uyumlu URL oluştur (Geliştirme modu)
+function proxify(u){
+  try {
+    // Geliştirme modu: Tüm hostlardan proxy kullan
+    // const allowedHosts = ['fcs3.xyz','fcs01.com','tontontv.xyz','vipeu1.site','8un93r.dynuddns.com','l550fo.dynuddns.com'];
+    const url = new URL(u);
+    const host = url.hostname;
+    
+    // Tüm hostlar için proxy kullan (geliştirme için)
+    if (/\.(mkv|avi|wmv|mp4|m4v|ts)(\?|$)/i.test(u)) {
+      return location.origin + '/proxy.php?u=' + encodeURIComponent(u);
+    }
+    
+    if (FORCE_PROXY_ALL) {
+      return location.origin + '/proxy.php?u=' + encodeURIComponent(u);
+    }
+    return u;
+  } catch (error) {
+    console.warn('Proxy URL oluşturulamadı:', error);
+    return u; // Hata durumunda orijinal URL'i döndür
+  }
+}
+
+/* === Global state === */
+const S={tab:'movies',login:null,cats:{},currentCat:null};
+const el={
+  cats:document.getElementById('cats'),
+  grid:document.getElementById('grid'),
+  tabs:document.querySelectorAll('.tab'),
+  expiry:document.getElementById('expiry'),
+  video:document.getElementById('video'),
+  playerModal:document.getElementById('playerModal'),
+  seriesModal:document.getElementById('seriesModal'),
+  seriesTitle:document.getElementById('seriesTitle'),
+  seasons:document.getElementById('seasons'),
+  episodes:document.getElementById('episodes'),
+  loading:document.getElementById('loading')
+};
+
+/* === API helpers === */
+function apiBase(){
+  return `${S.login.host}/player_api.php?username=${S.login.user}&password=${S.login.pass}`;
+}
+function streamUrl(kind,id,ext){
+  return `${S.login.host}/${kind}/${S.login.user}/${S.login.pass}/${id}.${ext}`;
+}
+async function fetchJSON(url){
+  try {
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return await r.json();
+  } catch (error) {
+    console.error('API Error:', error);
+    return null;
+  }
+}
+
+/* === Loading helpers === */
+function showLoading(msg = 'Yükleniyor...') {
+  el.loading.querySelector('div:last-child').textContent = msg;
+  el.loading.classList.add('active');
+}
+function hideLoading() {
+  el.loading.classList.remove('active');
+}
+
+/* === Login Auto === */
+(function(){
+  const saved=localStorage.getItem('qruze_login');
+  if(!saved){alert("Oturum yok, giriş yap.");location.href="index.html";return;}
+  try {
+    S.login=JSON.parse(saved);
+    if (!S.login.host || !S.login.user || !S.login.pass) {
+      throw new Error('Eksik giriş bilgileri');
+    }
+    boot();
+  } catch (error) {
+    alert('Giriş bilgileri hatalı. Tekrar giriş yapın.');
+    localStorage.removeItem('qruze_login');
+    location.href="index.html";
+  }
+})();
+
+async function boot(){
+  try {
+    showLoading('Hesap bilgileri alınıyor...');
+    const info = await fetchJSON(apiBase());
+    if (info?.user_info?.exp_date) {
+      const exp = new Date(info.user_info.exp_date * 1000);
+      el.expiry.textContent = `Bitiş: ${exp.toLocaleDateString('tr-TR')}`;
+    }
+    await loadCats();
+    selectFirstCat();
+    await loadList();
+  } catch (error) {
+    alert('Giriş doğrulanamadı: ' + error.message);
+    logout();
+  } finally {
+    hideLoading();
+  }
+}
+
+/* === Tabs === */
+el.tabs.forEach(t=>t.onclick=()=>{
+  el.tabs.forEach(x=>x.classList.remove('active'));
+  t.classList.add('active'); 
+  S.tab=t.dataset.tab;
+  S.currentCat = null;
+  renderCats(); 
+  loadList();
+});
+
+/* === Categories === */
+async function loadCats(){
+  try {
+    const [live,vod,series]=await Promise.all([
+      fetchJSON(apiBase()+'&action=get_live_categories'),
+      fetchJSON(apiBase()+'&action=get_vod_categories'),
+      fetchJSON(apiBase()+'&action=get_series_categories')
+    ]);
+    S.cats={live:live||[],vod:vod||[],series:series||[]}; 
+    renderCats();
+  } catch (error) {
+    console.error('Kategoriler yüklenemedi:', error);
+    S.cats = {live:[],vod:[],series:[]};
+  }
+}
+
+function renderCats(){
+  const cats=S.tab==='movies'?S.cats.vod:S.tab==='series'?S.cats.series:S.cats.live;
+  if (!cats || !cats.length) {
+    el.cats.innerHTML = '<li>Kategori bulunamadı</li>';
+    return;
+  }
+  
+  el.cats.innerHTML=cats.map((c,i)=>`
+    <li class="cat ${(!S.currentCat && i===0) || S.currentCat===c.category_id?'active':''}" 
+        data-id="${c.category_id}">${c.category_name}</li>
+  `).join('');
+  
+  el.cats.querySelectorAll('.cat').forEach(li=>li.onclick=()=>{
+    el.cats.querySelectorAll('.cat').forEach(x=>x.classList.remove('active'));
+    li.classList.add('active');
+    S.currentCat = li.dataset.id;
+    loadList();
+  });
+}
+
+function selectFirstCat(){
+  const cats=S.tab==='movies'?S.cats.vod:S.tab==='series'?S.cats.series:S.cats.live;
+  if (cats && cats.length > 0) {
+    S.currentCat = cats[0].category_id;
+  }
+  renderCats();
+}
+
+function activeCat(){
+  return S.currentCat || document.querySelector('.cat.active')?.dataset.id;
+}
+
+/* === Lists === */
+async function loadList(){
+  const cat=activeCat(); 
+  if(!cat) {
+    el.grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:#888">Kategori seçin</div>';
+    return;
+  }
+  
+  try {
+    showLoading('İçerikler yükleniyor...');
+    let url=apiBase();
+    if(S.tab==='movies') url+='&action=get_vod_streams&category_id='+cat;
+    else if(S.tab==='series') url+='&action=get_series&category_id='+cat;
+    else url+='&action=get_live_streams&category_id='+cat;
+    
+    const d=await fetchJSON(url);
+    renderList(d||[]);
+  } catch (error) {
+    console.error('Liste yüklenemedi:', error);
+    el.grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:#e63946">İçerik yüklenemedi</div>';
+  } finally {
+    hideLoading();
+  }
+}
+
+function safePoster(x){
+  return x?.stream_icon || x?.cover || x?.movie_image || 'https://via.placeholder.com/150x200?text=Qruze';
+}
+
+function renderList(items){
+  if (!items || !items.length) {
+    el.grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:#888">Bu kategoride içerik bulunamadı</div>';
+    return;
+  }
+  
+  el.grid.innerHTML=items.map(it=>{
+    const isSeries=S.tab==='series';
+    const title=it.name||'—';
+    const poster=safePoster(it);
+    const id=isSeries?it.series_id:it.stream_id;
+    const ext=it.container_extension||'mp4';
+    
+    const act=isSeries?`showSeries(${id},'${escapeHTML(title)}')`:`play('${S.tab==='movies'?'movie':'live'}',${id},'${ext}')`;
+    
+    return `<div class="card" onclick="${act}">
+      <div class="poster" style="background-image:url('${poster}')"></div>
+      <div class="title">${escapeHTML(title)}</div>
+    </div>`;
+  }).join('');
+}
+
+function escapeHTML(s){
+  return (s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
+}
+
+/* === Series === */
+async function showSeries(id, title){
+  try {
+    showLoading('Dizi bilgileri alınıyor...');
+    el.seriesTitle.textContent = title;
+    el.seriesModal.classList.add('active');
+    
+    const info = await fetchJSON(apiBase()+'&action=get_series_info&series_id='+id);
+    if (!info?.episodes) {
+      el.seasons.innerHTML = '<div>Bölüm bilgisi bulunamadı</div>';
+      el.episodes.innerHTML = '';
+      return;
+    }
+    
+    const episodes = info.episodes;
+    const seasons = Object.keys(episodes).sort((a,b)=>+a-+b);
+    
+    el.seasons.innerHTML = seasons.map((s,i)=>`
+      <div class="season ${i===0?'active':''}" data-season="${s}">Sezon ${s}</div>
+    `).join('');
+    
+    // İlk sezonu göster
+    renderEpisodes(seasons[0], episodes[seasons[0]]);
+    
+    // Sezon tıklama olayları
+    el.seasons.querySelectorAll('.season').forEach(seasonEl => {
+      seasonEl.onclick = () => {
+        el.seasons.querySelectorAll('.season').forEach(s=>s.classList.remove('active'));
+        seasonEl.classList.add('active');
+        const seasonNum = seasonEl.dataset.season;
+        renderEpisodes(seasonNum, episodes[seasonNum]);
+      };
+    });
+    
+  } catch (error) {
+    console.error('Dizi bilgisi alınamadı:', error);
+    el.seasons.innerHTML = '<div>Dizi bilgisi alınamadı</div>';
+  } finally {
+    hideLoading();
+  }
+}
+
+function renderEpisodes(seasonNum, episodeList){
+  if (!episodeList || !episodeList.length) {
+    el.episodes.innerHTML = '<div>Bu sezonda bölüm bulunamadı</div>';
+    return;
+  }
+  
+  el.episodes.innerHTML = episodeList.map(ep => {
+    const ext = (ep.container_extension || 'mp4').toLowerCase();
+    const url = streamUrl('series', ep.id, ext);
+    const finalUrl = proxify(url);
+    
+    return `<div class="episode" onclick="playDirect('${finalUrl}','${ext}')">
+      Bölüm ${ep.episode_num || ''} — ${escapeHTML(ep.title || '')}
+    </div>`;
+  }).join('');
+}
+
+function closeSeries(){
+  el.seriesModal.classList.remove('active');
+}
+
+/* === Player === */
+function play(kind,id,ext){
+  if(kind==='live') ext='m3u8';
+  let url=streamUrl(kind,id,ext);
+  url=proxify(url);
+  playDirect(url,ext);
+}
+
+function playDirect(url,ext){
+  if(window._hls){try{_hls.destroy()}catch{} window._hls=null;}
+  
+  el.video.pause();
+  el.video.removeAttribute('src');
+  el.video.load();
+  
+  if(ext==='m3u8'){
+    if(Hls.isSupported()){
+      window._hls=new Hls(); 
+      _hls.loadSource(url); 
+      _hls.attachMedia(el.video);
+      _hls.on(Hls.Events.MANIFEST_PARSED,()=>el.video.play());
+      _hls.on(Hls.Events.ERROR,(e,data)=>{
+        if(data.fatal){
+          alert('Akış açılamadı: ' + data.details);
+          try{_hls.destroy()}catch{}
+        }
+      });
+    }else{
+      el.video.src=url;
+      el.video.play();
+    }
+  }else{
+    el.video.src=url;
+    el.video.play();
+  }
+  el.playerModal.classList.add('active');
+}
+
+el.playerModal.onclick=()=>{
+  el.playerModal.classList.remove('active');
+  el.video.pause();
+};
+
+function logout(){
+  localStorage.removeItem('qruze_login');
+  location.href="index.html";
+}
+</script>
+</body>
+</html>
